@@ -14,7 +14,7 @@ export function login() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={[styles.container, styles.content]}>
       {/* Logo and Title */}
       <View style={styles.headerContainer}>
         <Text style={styles.title}>TechCare</Text>
@@ -58,7 +58,7 @@ export function login() {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
