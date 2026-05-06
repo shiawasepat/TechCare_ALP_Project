@@ -1,5 +1,6 @@
 import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { useState } from "react";
+import { router, useRouter } from "expo-router";
 import { EyeIcon } from "@/components/svg/EyeIcon";
 import { colors as defaultColor } from "@/styles/colors";
 
@@ -9,7 +10,6 @@ export function login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = () => {
-    console.log("Sign in:", { email, password });
     // TODO: Add authentication logic
   };
 
@@ -52,7 +52,9 @@ export function login() {
         <View style={styles.createAccountContainer}>
           <Text style={styles.createAccountText}>New here? </Text>
           <TouchableOpacity>
-            <Text style={styles.createAccountLink}>Create an account</Text>
+            <Text style={styles.createAccountLink} onPress={() => router.push("/user/register")}>
+              Create an account
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -93,7 +95,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
-    borderRadius: 25,
+    borderRadius: 50,
     paddingVertical: 15,
     marginBottom: 25,
   },
@@ -115,24 +117,24 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#fff",
-    borderRadius: 25,
+    borderRadius: 50,
     paddingVertical: 12,
     paddingHorizontal: 20,
     marginBottom: 15,
-    fontSize: 14,
+    fontSize: 18,
   },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 15,
     backgroundColor: "#fff",
-    borderRadius: 25,
+    borderRadius: 50,
   },
   passwordInput: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    fontSize: 14,
+    fontSize: 18,
   },
   divider: {
     width: 8,
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
   },
   signInButton: {
     backgroundColor: "#fff",
-    borderRadius: 25,
+    borderRadius: 50,
     paddingVertical: 15,
     marginTop: 40,
     marginBottom: 45,
