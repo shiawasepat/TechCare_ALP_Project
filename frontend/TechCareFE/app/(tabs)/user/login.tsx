@@ -27,7 +27,7 @@ export function login() {
     if (email === dummyEmail && password === dummyPassword) {
       console.log("Login successful!");
       // Navigate to home screen or dashboard
-      router.push("./details");
+      router.push("./home");
     } else {
       alert("Invalid credentials. Try: tech / 123");
     }
