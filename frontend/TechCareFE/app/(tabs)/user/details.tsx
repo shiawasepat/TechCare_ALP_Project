@@ -14,7 +14,7 @@ export function details() {
   const navigation = useNavigation();
   const [rating] = useState(4);
   const [activeTab, setActiveTab] = useState("service");
-  const [selectedService, setSelectedService] = useState("Home Service");
+  const [selectedService, setSelectedService] = useState<"Home Service" | "Scheduled Service">("Home Service");
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const tabs = ["service", "reviews", "about"];
@@ -51,7 +51,7 @@ export function details() {
         <Image source={require("@/assets/images/sv_ct/mcp.jpg")} style={styles.detailsImage} />
 
         {/* Title with Save/Share */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginVertical: -20 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 15 }}>
           <Text style={styles.detailsTitle}>Mugen Computer Pettarani</Text>
           <View style={{ flexDirection: "row" }}>
             <SaveBtn />
@@ -62,7 +62,7 @@ export function details() {
         {/* Rating and Address */}
         <View style={styles.starsContainer}>
           {[1, 2, 3, 4, 5].map((star) => (
-            <StarIcon key={star} filled={star <= rating} />
+            <StarIcon key={star} isFilled={star <= rating} />
           ))}
           <Text style={styles.ratingText}>({rating})</Text>
         </View>
@@ -81,7 +81,7 @@ export function details() {
           </View>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <CheckIcon />
-            <Text style={[styles.serviceAvailable, { marginLeft: 8 }]}>Available For Home Service</Text>
+            <Text style={[styles.serviceAvailable, { marginLeft: 8, fontWeight: "bold" }]}>Available For Home Service</Text>
           </View>
         </View>
 
@@ -155,7 +155,8 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
+    paddingVertical: 20,
     backgroundColor: "#fff",
     zIndex: 100,
   },
@@ -178,6 +179,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
+    marginBottom: 8,
   },
   ratingText: {
     fontSize: 16,
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     fontSize: 14,
     color: "#666",
-    marginBottom: 15,
+    marginBottom: 20,
   },
   infoCard: {
     marginHorizontal: 20,
