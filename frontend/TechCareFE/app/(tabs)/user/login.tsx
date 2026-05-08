@@ -10,7 +10,27 @@ export function login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = () => {
-    // TODO: Add authentication logic
+    // Dummy credentials for testing
+    const dummyEmail = "tech";
+    const dummyPassword = "123";
+
+    // Validate inputs
+    if (!email || !password) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    // For testing: log the credentials
+    console.log("Sign in attempt:", { email, password });
+
+    // Mock successful login - replace with actual API call
+    if (email === dummyEmail && password === dummyPassword) {
+      console.log("Login successful!");
+      // Navigate to home screen or dashboard
+      router.push("./details");
+    } else {
+      alert("Invalid credentials. Try: tech / 123");
+    }
   };
 
   return (
