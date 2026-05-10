@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('services', function (Blueprint $table) {
-            $table->id();
+            $table->id('id_service');
+            $table->foreignId('id_service_center')->constrained('service_centers', 'id_service_center');
+            $table->string('nama_service');
+            $table->string('deskripsi_service');
+            $table->decimal('harga_service', 10, 2);
             $table->timestamps();
         });
     }

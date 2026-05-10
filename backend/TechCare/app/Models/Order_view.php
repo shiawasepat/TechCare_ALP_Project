@@ -21,6 +21,7 @@ class Order_view extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'id_order',
         'status'
 
 

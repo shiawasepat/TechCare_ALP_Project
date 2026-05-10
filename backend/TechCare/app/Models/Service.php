@@ -12,6 +12,7 @@ class Service extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'id_service_center',
         'nama_service',
         'deskripsi_service',
         'harga_service',
@@ -20,7 +21,7 @@ class Service extends Model
 
         public function serviceCenter()
     {
-        return $this->belongsTo(Service_Center::class, 'service_center_id', 'service_center_id');
+        return $this->belongsTo(Service_Center::class, 'id_service_center', 'id_service_center');
     }
 
 

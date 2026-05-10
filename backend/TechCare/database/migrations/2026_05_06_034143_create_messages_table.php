@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
-            $table->id();
+            $table->id("id_message");
+            $table->foreignId('id_chats')->constrained('chats', 'id_chats')->onDelete('cascade');
+            $table->unsignedBigInteger('id_sender');
+            $table->enum('sender_role', ['user', 'mitra']);
+            $table->text('pesan');
             $table->timestamps();
         });
     }

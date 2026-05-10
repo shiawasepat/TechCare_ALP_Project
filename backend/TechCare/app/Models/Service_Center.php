@@ -20,10 +20,14 @@ class Service_Center extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'id_mitra',
+        'id_service',
+        'id_rating',
         'name_service_center',
         'deskripsi_service_center',
         'lokasi_service_center',
         'status_service_center',
+        'foto_service_center',
 
     ];
 
@@ -31,18 +35,18 @@ class Service_Center extends Authenticatable
 
     public function mitra()
     {
-        return $this->belongsTo(Mitra::class, 'mitra_id', 'mitra_id');
+        return $this->belongsTo(Mitra::class, 'id_mitra', 'id_mitra');
     }
 
 
     public function services()
     {
-        return $this->hasMany(Service::class, 'service_center_id', 'service_center_id');
+        return $this->hasMany(Service::class, 'id_service_center', 'id_service_center');
     }
 
     public function ratings()
     {
-        return $this->hasMany(Rating::class, 'service_center_id', 'service_center_id');
+        return $this->hasMany(Rating::class, 'id_service_center', 'id_service_center');
     }
 
 

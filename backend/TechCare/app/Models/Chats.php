@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Chats extends Model
 {
     protected $fillable = [
+        'id_order',
+        
 
     ];
 
@@ -19,6 +21,6 @@ class Chats extends Model
 
         public function messages()
     {
-        return $this->hasMany(Message::class, 'chat_id', 'chat_id');
+        return $this->hasMany(Message::class, 'id_chat', 'id_chat');
     }
 }
