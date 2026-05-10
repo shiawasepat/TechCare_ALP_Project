@@ -21,7 +21,9 @@ class History_mitra extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'tanggal',
+        'id_mitra',
+        'id_order_view',
+        'tanggal_selesai',
 
 
     ];

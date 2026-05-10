@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('chats', function (Blueprint $table) {
-            $table->id();
+            $table->id('id_chats');
+            $table->foreignId('id_order')->constrained('orders', 'id_order');
             $table->timestamps();
         });
     }

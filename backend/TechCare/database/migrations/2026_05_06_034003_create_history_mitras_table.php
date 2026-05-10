@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('history_mitras', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id('id_history_mitra');
+            $table->foreignId('id_mitra')->constrained('mitras', 'id_mitra');
+            $table->foreignId('id_order_view')->constrained('order_views', 'id_order_view');
+            $table->timestamp('tanggal_selesai')->nullable();
         });
     }
 
