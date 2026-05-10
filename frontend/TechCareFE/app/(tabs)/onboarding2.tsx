@@ -9,7 +9,7 @@ export default function OnboardingScreenTwo() {
       <View style={styles.contentContainer}>
         <View style={styles.imageContainer}>
           <Image
-            source={require('../../assets/Onboarding2.png')}
+            source={require('../../assets/Onboarding2.jpg')}
             style={styles.image}
             resizeMode="contain"
           />
@@ -27,8 +27,8 @@ export default function OnboardingScreenTwo() {
           </Text>
 
           <Text style={styles.subtitle}>
-            Solusi mudah untuk perawatan dan{"\n"}
-            perbaikan laptop Anda
+            Pilih layanan, atur jadwal yang sesuai,{"\n"}
+            dan booking dari rumah
           </Text>
 
           <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={() => router.push('/user/login')}>
