@@ -1,6 +1,5 @@
 import { Animated, Image, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
 import { useState, useEffect, useRef } from "react";
-import { useNavigation } from "@react-navigation/native";
 import { colors as defaultColor } from "@/styles/colors";
 import { BackBtn } from "@/components/btn/back-btn";
 import { SaveBtn } from "@/components/btn/save-btn";
@@ -9,9 +8,9 @@ import { StarIcon } from "@/components/svg/Star";
 import { ServiceIcon } from "@/components/svg/Service";
 import { ClockIcon } from "@/components/svg/Clock";
 import { CheckIcon } from "@/components/svg/Check";
+import { router } from "expo-router";
 
 export function details() {
-  const navigation = useNavigation();
   const [rating] = useState(4);
   const [activeTab, setActiveTab] = useState("service");
   const [selectedService, setSelectedService] = useState<"Home Service" | "Scheduled Service">("Home Service");
@@ -21,12 +20,11 @@ export function details() {
 
   const handleContinue = () => {
     // Commented to prevent navigation
-    // if (selectedService == "Home Service") {
-    //   navigation.navigate("home-service");
-    // }
-    // else if (selectedService == "Scheduled Service") {
-    //   navigation.navigate("scheduled-service");
-    // }
+    if (selectedService == "Home Service") {
+      router.push("./home-service");
+    } else if (selectedService == "Scheduled Service") {
+      router.push("./scheduled-service");
+    }
   };
 
   useEffect(() => {
@@ -135,7 +133,7 @@ export function details() {
         </View>
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.continueButton}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
