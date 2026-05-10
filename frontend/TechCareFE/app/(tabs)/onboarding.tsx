@@ -1,19 +1,35 @@
-import React, { useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View, Image, TouchableOpacity, PanResponder } from 'react-native';
 import { router } from 'expo-router';
 import SoftRadialBackground from '../../components/SoftRadialBackground';
 
+const TOTAL_SLIDES = 2;
+const CURRENT_SLIDE = 0; // 0 for onboarding1, 1 for onboarding2
+
 export default function OnboardingScreen() {
-  // dot animation 
-  const dotAnim = useRef(new Animated.Value(0)).current;
+  const [currentSlide] = useState(CURRENT_SLIDE);
+  const dotAnim = useRef(new Animated.Value(currentSlide)).current;
   const navigating = useRef(false);
-  const DOT_SPACING = 18; 
+  const DOT_SPACING = 18;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderRelease: (evt, gestureState) => {
+        const { dx } = gestureState;
+        if (dx > 50) { // swipe right threshold
+          handleNext();
+        }
+      },
+    })
+  ).current;
 
   const handleNext = () => {
     if (navigating.current) return;
     navigating.current = true;
     Animated.timing(dotAnim, {
-      toValue: 1,
+      toValue: currentSlide + 1,
       duration: 300,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: false,
@@ -22,10 +38,10 @@ export default function OnboardingScreen() {
 
   return (
     <SoftRadialBackground animated={false}>
-      <View style={styles.contentContainer}>
+      <View style={styles.contentContainer} {...panResponder.panHandlers}>
         <View style={styles.imageContainer}>
           <Image
-            source={require('../../assets/Onboarding1.png')}
+            source={require('../../assets/Onboarding1.jpg')}
             style={styles.image}
             resizeMode="contain"
           />
@@ -34,14 +50,15 @@ export default function OnboardingScreen() {
         <View style={styles.textContainer}>
           <View style={styles.paginationContainer}>
             <View style={styles.dotWrapper}>
-              <View style={[styles.dot, styles.inactiveDot]} />
-              <View style={[styles.dot, styles.inactiveDot]} />
-              <Animated.View
-                style={[
-                  styles.activeIndicator,
-                  { transform: [{ translateX: dotAnim.interpolate({ inputRange: [0, 1], outputRange: [0, DOT_SPACING] }) }] },
-                ]}
-              />
+              {[0, 1].map((index) => (
+                <View
+                  key={`dot-${index}`}
+                  style={[
+                    styles.dot,
+                    index === currentSlide ? styles.activeDot : styles.inactiveDot,
+                  ]}
+                />
+              ))}
             </View>
           </View>
 
@@ -89,26 +106,17 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   dotWrapper: {
-    width: 40,
+    width: 60,
     height: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    position: 'relative',
+    justifyContent: 'center',
+    gap: 8,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginHorizontal: 5,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    left: 0,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3B82F6',
   },
   activeDot: {
     backgroundColor: '#3B82F6',

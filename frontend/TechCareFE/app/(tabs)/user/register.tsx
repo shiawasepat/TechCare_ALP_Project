@@ -17,7 +17,10 @@ export function register() {
     <View style={[styles.container, styles.content]}>
       {/* Logo and Title */}
       <View style={styles.headerContainer}>
-        <Text style={styles.title}>TechCare</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleTech}>Tech</Text>
+          <Text style={styles.titleCare}>Care</Text>
+        </View>
       </View>
 
       {/* Blue Container */}
@@ -81,11 +84,21 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 20,
   },
-  title: {
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 50,
+  },
+  titleTech: {
     fontSize: 28,
-    margin: 50,
     fontWeight: "bold",
     color: "#000",
+  },
+  titleCare: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: defaultColor.primary.backgroundColor,
   },
   blueContainer: {
     flex: 1,

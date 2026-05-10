@@ -1,6 +1,7 @@
-import { Animated, Image, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
+import { Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import { useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 import { colors as defaultColor } from "@/styles/colors";
 import { BackBtn } from "@/components/btn/back-btn";
 import { SaveBtn } from "@/components/btn/save-btn";
@@ -10,9 +11,23 @@ import { ServiceIcon } from "@/components/svg/Service";
 import { ClockIcon } from "@/components/svg/Clock";
 import { CheckIcon } from "@/components/svg/Check";
 
+const serviceImageMap: Record<string, ImageSourcePropType> = {
+  "Mugen Computer Pettarani": require("@/assets/images/sv_ct/Mugen Computer Pettarani.jpg"),
+  "Mugen Computer Tanjung Bunga": require("@/assets/images/sv_ct/Mugen Computer Tanjung Bunga .jpg"),
+  "Elextra Komputer": require("@/assets/images/sv_ct/Elextra Komputer.jpg"),
+  "HND Computer": require("@/assets/images/sv_ct/HND Computer Ince Nurdin.jpg"),
+  "HND Computer Pengayoman": require("@/assets/images/sv_ct/HND Computer Pengayoman.jpg"),
+};
+
 export function details() {
   const navigation = useNavigation();
-  const [rating] = useState(4);
+  const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string }>();
+  const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "Mugen Computer Pettarani";
+  const serviceAddress = typeof params.address === "string" && params.address.length > 0 ? params.address : "Jl. A. P. Pettarani No.89a, Makassar";
+  const serviceDistance = typeof params.distance === "string" && params.distance.length > 0 ? params.distance : "5.1 km";
+  const serviceClosesAt = typeof params.closesAt === "string" && params.closesAt.length > 0 ? params.closesAt : "09.00 pm";
+  const ratingValue = typeof params.rating === "string" ? Number(params.rating) : 4;
+  const detailImage = serviceImageMap[serviceName] ?? require("@/assets/images/sv_ct/Mugen Computer Pettarani.jpg");
   const [activeTab, setActiveTab] = useState("service");
   const [selectedService, setSelectedService] = useState<"Home Service" | "Scheduled Service">("Home Service");
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -48,11 +63,11 @@ export function details() {
 
       <ScrollView style={styles.container}>
         {/* Image */}
-        <Image source={require("@/assets/images/sv_ct/mcp.jpg")} style={styles.detailsImage} />
+        <Image source={detailImage} style={styles.detailsImage} />
 
         {/* Title with Save/Share */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 15 }}>
-          <Text style={styles.detailsTitle}>Mugen Computer Pettarani</Text>
+          <Text style={styles.detailsTitle}>{serviceName}</Text>
           <View style={{ flexDirection: "row" }}>
             <SaveBtn />
             <ShareBtn />
@@ -62,11 +77,11 @@ export function details() {
         {/* Rating and Address */}
         <View style={styles.starsContainer}>
           {[1, 2, 3, 4, 5].map((star) => (
-            <StarIcon key={star} isFilled={star <= rating} />
+            <StarIcon key={star} isFilled={star <= Math.floor(ratingValue)} />
           ))}
-          <Text style={styles.ratingText}>({rating})</Text>
+          <Text style={styles.ratingText}>({ratingValue.toFixed(1)})</Text>
         </View>
-        <Text style={styles.addressText}>Jl. A. P. Pettarani No.89a, Makassar</Text>
+        <Text style={styles.addressText}>{serviceAddress}</Text>
 
         {/* Business Hours Section */}
         <View style={styles.infoCard}>

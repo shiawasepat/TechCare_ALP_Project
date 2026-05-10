@@ -27,7 +27,7 @@ export function login() {
     if (email === dummyEmail && password === dummyPassword) {
       console.log("Login successful!");
       // Navigate to home screen or dashboard
-      router.push("./home");
+      router.push("/user/dashboard");
     } else {
       alert("Invalid credentials. Try: tech / 123");
     }
@@ -37,14 +37,17 @@ export function login() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Logo and Title */}
       <View style={styles.headerContainer}>
-        <Text style={styles.title}>TechCare</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleTech}>Tech</Text>
+          <Text style={styles.titleCare}>Care</Text>
+        </View>
       </View>
 
       {/* Blue Container */}
       <View style={styles.blueContainer}>
         {/* Google Sign In Button */}
         <TouchableOpacity style={styles.googleButton}>
-          <Image source={require("../../../assets/Google.png")} style={styles.googleIcon} />
+          <Image source={require("../../../assets/Google.jpg")} style={styles.googleIcon} />
           <Text style={styles.googleButtonText}>Sign in with Google</Text>
         </TouchableOpacity>
 
@@ -95,11 +98,21 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 20,
   },
-  title: {
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 80,
+  },
+  titleTech: {
     fontSize: 28,
-    margin: 80,
     fontWeight: "bold",
     color: "#000",
+  },
+  titleCare: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: defaultColor.primary.backgroundColor,
   },
   blueContainer: {
     flex: 1,
