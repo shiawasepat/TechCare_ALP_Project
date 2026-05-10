@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('service_centers', function (Blueprint $table) {
-            $table->id("service_center_id");
-            $table->foreignId('mitra_id')->unique()->constrained('mitras', 'mitra_id');
+            $table->id("id_service_center");
+            $table->foreignId('id_mitra')->unique()->constrained('mitras', 'id_mitra');
+            $table->foreignId('id_service')->constrained('services', 'id_service');
+            $table->foreignId('id_rating')->constrained('ratings', 'id_rating');
+            $table->string('nama_service_center');
+            $table->string('deskripsi_service_center');
+            $table->string('lokasi_service_center');
+            $table->enum('status_service_center', ['buka', 'tutup'])-> default('buka');
+            $table->string('foto_service_center')->nullable();
             $table->timestamps();
         });
     }

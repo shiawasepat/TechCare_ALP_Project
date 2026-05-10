@@ -31,7 +31,12 @@ class Mitra extends Authenticatable
 
     public function serviceCenter()
     {
-        return $this->hasOne(Service_Center::class, 'mitra_id', 'mitra_id');
+        return $this->hasOne(Service_Center::class, 'id_mitra', 'id_mitra');
     }
+
+    public function messages()
+{
+    return $this->hasMany(Message::class, 'id_sender', 'id_mitra');
+}
 
 }

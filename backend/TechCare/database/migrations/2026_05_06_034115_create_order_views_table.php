@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_views', function (Blueprint $table) {
-            $table->id();
+            $table->id('id_order_view');
+            $table->foreignId('id_order')->constrained('orders', 'id_order');
+            $table->enum('status_order', ['pending', 'in_progress', 'completed'])->default('pending');
             $table->timestamps();
         });
     }

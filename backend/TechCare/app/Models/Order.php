@@ -9,7 +9,9 @@ use illuminate\Database\Eloquent\Relations\HasOne;
 class Order extends Model
 {
     protected $fillable = [
-        
+        'id_service',
+        'id_user',
+        'id_payment'
     ];
 
 
