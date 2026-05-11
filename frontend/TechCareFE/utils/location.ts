@@ -1,56 +1,59 @@
 import { Platform } from "react-native";
 
-type Location = { latitude: number; longitude: number } | null;
+export type UserLocation = {
+	latitude: number;
+	longitude: number;
+};
 
-export const getCurrentUserLocation = async (): Promise<Location> => {
-	if (Platform.OS === "web") {
-		return new Promise((resolve) => {
-			if (!navigator.geolocation) {
-				console.warn("Geolocation not available");
-				resolve(null);
-				return;
-			}
-
-			navigator.geolocation.getCurrentPosition(
-				(position) => {
-					resolve({
-						latitude: position.coords.latitude,
-						longitude: position.coords.longitude,
-					});
-				},
-				(error) => {
-					console.warn("Geolocation error:", error);
-					resolve(null);
-				},
-				{ timeout: 10000, enableHighAccuracy: false }
-			);
-		});
-	}
-
+export async function getCurrentUserLocation(): Promise<UserLocation | null> {
 	try {
-		// Dynamic import for expo-location on native
-		// @ts-ignore - expo-location is installed but TypeScript can't resolve dynamic import at compile time
-		const ExpoLocation: any = await import("expo-location");
-		const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
-		if (status !== "granted") {
-			console.warn("Location permission not granted");
-			const lastKnown = await ExpoLocation.getLastKnownPositionAsync();
-			if (lastKnown) {
-				return {
-					latitude: lastKnown.coords.latitude,
-					longitude: lastKnown.coords.longitude,
-				};
+		if (Platform.OS === "web") {
+			if (typeof navigator === "undefined" || !navigator.geolocation) {
+				return null;
 			}
+
+			return await new Promise<UserLocation | null>((resolve) => {
+				try {
+					navigator.geolocation.getCurrentPosition(
+						(position) => {
+							resolve({
+								latitude: position.coords.latitude,
+								longitude: position.coords.longitude,
+							});
+						},
+						() => resolve(null),
+						{ enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
+					);
+				} catch {
+					resolve(null);
+				}
+			});
+		}
+
+		const Location = await import("expo-location");
+		const permission = await Location.requestForegroundPermissionsAsync();
+		if (permission.status !== "granted") {
 			return null;
 		}
 
-		const location = await ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.Balanced });
+		let current;
+		try {
+			current = await Location.getCurrentPositionAsync({
+				accuracy: Location.Accuracy.Balanced,
+			});
+		} catch {
+			current = await Location.getLastKnownPositionAsync();
+		}
+
+		if (!current) {
+			return null;
+		}
+
 		return {
-			latitude: location.coords.latitude,
-			longitude: location.coords.longitude,
+			latitude: current.coords.latitude,
+			longitude: current.coords.longitude,
 		};
-	} catch (error) {
-		console.warn("Error getting location:", error);
+	} catch {
 		return null;
 	}
-};
+}

@@ -256,7 +256,7 @@ export function dashboard() {
 	}, [activeFilter, centersWithDistance]);
 
 	return (
-		<SafeAreaView style={styles.safeArea}>
+		<SafeAreaView style={styles.safeArea} edges={["top", "bottom", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
 			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 				<View style={styles.topRow}>
@@ -389,8 +389,8 @@ const styles = StyleSheet.create({
 	},
 	content: {
 		paddingHorizontal: 20,
-		paddingTop: 6,
-		paddingBottom: 116,
+		paddingTop: 16,
+		paddingBottom: 120,
 	},
 	topRow: {
 		flexDirection: "row",
