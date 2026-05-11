@@ -1,4 +1,5 @@
 import { Image, StyleSheet, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 import { colors } from "@/styles/colors";
 
 const styles = StyleSheet.create({
@@ -13,7 +14,7 @@ const styles = StyleSheet.create({
 
 export function BackBtn() {
   return (
-    <TouchableOpacity style={styles.backIcon}>
+    <TouchableOpacity style={styles.backIcon} onPress={() => router.replace("/user/dashboard")}>
       <Image source={require("@/assets/icons/arrow-back.png")} />
     </TouchableOpacity>
   );
