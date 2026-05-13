@@ -1,12 +1,12 @@
 import { Animated, Text, Dimensions, StyleSheet, TouchableOpacity, View, Modal, Pressable, FlatList, Easing } from "react-native";
 import { BlurView } from "expo-blur";
 import { useState, useEffect, useRef } from "react";
-import { styles } from "@/styles/mitra/order-view";
 import { colors } from "@/styles/colors";
 import { LocationIcon } from "@/components/svg/Location";
 import { DropdownIcon } from "@/components/svg/Dropdown";
 import { ServiceIcon } from "@/components/svg/Service";
 import { MitraBottomNavigation } from "@/components/MitraBottomNavigation";
+import { MoreHorizontal } from "@/components/svg/MoreHorizontal";
 
 const { width } = Dimensions.get("window");
 
@@ -43,6 +43,7 @@ const MOCK_ORDERS: Order[] = [
     serviceType: "Scheduled Service",
     price: "Rp120.000",
     status: "new",
+    isNew: true,
   },
   {
     id: "3",
@@ -53,6 +54,7 @@ const MOCK_ORDERS: Order[] = [
     serviceType: "Scheduled Service",
     price: "Rp120.000",
     status: "new",
+    isNew: true,
   },
   {
     id: "4",
@@ -99,6 +101,7 @@ export default function OrderView() {
   const [statusMenuVisible, setStatusMenuVisible] = useState(false);
   const [selectedStatusOption, setSelectedStatusOption] = useState<"open" | "closed-while" | "closed-until">("open");
   const [closedDuration, setClosedDuration] = useState<30 | 60 | 90>(30);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     const tabIndex = tabs.indexOf(activeTab);
@@ -113,8 +116,9 @@ export default function OrderView() {
   const filteredOrders = (() => {
     if (activeTab === "all") {
       const ongoing = orders.filter((order) => order.status === "ongoing");
-      const others = orders.filter((order) => order.status !== "ongoing");
-      return [...ongoing, ...others];
+      const newOrders = orders.filter((order) => order.status === "new");
+      const done = orders.filter((order) => order.status === "done");
+      return [...ongoing, ...newOrders, ...done];
     } else {
       return orders.filter((order) => order.status === activeTab);
     }
@@ -130,11 +134,12 @@ export default function OrderView() {
   const handleAcceptOrder = (orderId: string) => {
     // Mark order as being handled
     setHandlingOrderId(orderId);
-    // After 2 seconds, move to ongoing status
-    setTimeout(() => {
-      setOrders((prevOrders) => prevOrders.map((order) => (order.id === orderId ? { ...order, status: "ongoing" as const } : order)));
-      setHandlingOrderId(null);
-    }, 2000);
+  };
+
+  const handleCompleteOrder = (orderId: string) => {
+    // Mark order as complete and moves it to done tab
+    setOrders((prevOrders) => prevOrders.map((order) => (order.id === orderId ? { ...order, status: "done" } : order)));
+    setHandlingOrderId(null);
   };
 
   const handleCancelReject = () => {
@@ -149,16 +154,31 @@ export default function OrderView() {
 
   const renderOrderCard = ({ item, index }: { item: Order; index: number }) => {
     const isHandling = handlingOrderId === item.id;
+    const isDone = item.status === "done";
     const isFirstOngoing = index === 0 && item.status === "ongoing" && activeTab === "all";
 
     return (
       <>
-        {isFirstOngoing && <Text style={styles.sectionHeader}>Pinned - Current Orders</Text>}
-        <View style={[styles.orderCard, isHandling && { opacity: 0.6 }]}>
-          <View style={styles.orderInfo}>
+        {isHandling && <Text style={styles.sectionHeader}>Pinned - Current Orders</Text>}
+        <View
+          style={[
+            styles.orderCard,
+            isHandling && {
+              borderWidth: 3,
+              borderColor: colors.primary.backgroundColor,
+              backgroundColor: "#f0f7ff",
+              shadowColor: colors.primary.backgroundColor,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 12,
+              elevation: 12,
+            },
+          ]}
+        >
+          <View style={[styles.orderInfo, { position: "relative" }]}>
             {/* Order Info */}
             <View style={styles.profileSection}>
-              <View style={styles.avatar} /> {/* Avatar */}
+              <View style={styles.avatar} />
               <View style={styles.profileInfo}>
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.time}>{item.time}</Text>
@@ -187,14 +207,43 @@ export default function OrderView() {
           <Text style={styles.price}>{item.price}</Text>
 
           {/* Reject & Accept */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.rejectButton} onPress={() => handleRejectPress(item.id)} disabled={isHandling}>
-              <Text style={styles.rejectButtonText}>{isHandling ? "Processing..." : "Reject"}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.acceptButton, isHandling && { opacity: 0.6 }]} onPress={() => handleAcceptOrder(item.id)} disabled={isHandling}>
-              <Text style={styles.acceptButtonText}>{isHandling ? "Accepting..." : item.status === "ongoing" ? "Handling" : "Accept Order"}</Text>
-            </TouchableOpacity>
+          <View style={[styles.buttonContainer, isHandling && { gap: 0 }]}>
+            {!isDone && (
+              <>
+                {!isHandling && (
+                  <TouchableOpacity style={styles.rejectButton} onPress={() => handleRejectPress(item.id)}>
+                    <Text style={styles.rejectButtonText}>Reject</Text>
+                  </TouchableOpacity>
+                )}
+                {isHandling ? (
+                  <TouchableOpacity style={[styles.acceptButton, { flex: 1, backgroundColor: "#4CAF50" }]} onPress={() => handleCompleteOrder(item.id)}>
+                    <Text style={styles.acceptButtonText}>Complete</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={[styles.acceptButton, isHandling && { flex: 1 }]} onPress={() => handleAcceptOrder(item.id)}>
+                    <Text style={styles.acceptButtonText}>{item.status === "ongoing" ? "Processing" : "Accept Order"}</Text>
+                  </TouchableOpacity>
+                )}
+                {isHandling && (
+                  <TouchableOpacity style={styles.moreOptionsButton} onPress={() => setExpandedOrderId(expandedOrderId === item.id ? null : item.id)}>
+                    <MoreHorizontal />
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+            {isDone && (
+              <View style={[styles.doneBadge, { flex: 1 }]}>
+                <Text style={styles.doneButtonText}>Done</Text>
+              </View>
+            )}
           </View>
+
+          {/* Expanded Options */}
+          {expandedOrderId === item.id && isHandling && !isDone && (
+            <TouchableOpacity style={styles.cancelOrderButton} onPress={() => handleRejectPress(item.id)}>
+              <Text style={styles.cancelButtonOptionText}>Cancel Order</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </>
     );
@@ -254,8 +303,8 @@ export default function OrderView() {
                     height: 24,
                     borderRadius: 12,
                     borderWidth: 2,
-                    borderColor: selectedStatusOption === "open" ? "#2196f3" : "#ccc",
-                    backgroundColor: selectedStatusOption === "open" ? "#2196f3" : "transparent",
+                    borderColor: selectedStatusOption === "open" ? colors.primary.backgroundColor : "#ccc",
+                    backgroundColor: selectedStatusOption === "open" ? colors.primary.backgroundColor : "transparent",
                     justifyContent: "center",
                     alignItems: "center",
                   }}
@@ -370,7 +419,11 @@ export default function OrderView() {
                   alignItems: "center",
                 }}
                 onPress={() => {
-                  const statusMap = { open: "open", "closed-while": "closed", "closed-until": "closed" };
+                  const statusMap: Record<string, "open" | "closed"> = {
+                    open: "open",
+                    "closed-while": "closed",
+                    "closed-until": "closed",
+                  };
                   setShopStatus(statusMap[selectedStatusOption]);
                   setStatusMenuVisible(false);
                 }}
@@ -412,7 +465,7 @@ export default function OrderView() {
       </View>
 
       {/* Order List */}
-      <FlatList data={filteredOrders} renderItem={renderOrderCard} scrollEnabled={true} style={styles.listContent} />
+      <FlatList data={filteredOrders} renderItem={renderOrderCard} scrollEnabled={true} style={styles.listContent} contentContainerStyle={{ paddingBottom: 100 }} />
 
       {/* Reject Confirmation Modal */}
       <Modal visible={rejectConfirmVisible} transparent animationType="fade">
@@ -438,3 +491,263 @@ export default function OrderView() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background.backgroundColor,
+  },
+  tabContainer: {
+    flexDirection: "row",
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activeTab: {
+    borderBottomColor: colors.primary.backgroundColor,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#999",
+  },
+  activeTabText: {
+    color: "#2196f3",
+    fontWeight: "600",
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 24,
+    gap: 24,
+    backgroundColor: "#f9f9f9",
+  },
+  orderCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 0,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  orderInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#e0e0e0",
+  },
+  profileInfo: {
+    justifyContent: "center",
+    gap: 2,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  time: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 2,
+  },
+  serviceSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  serviceIcon: {
+    fontSize: 16,
+  },
+  serviceType: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#333",
+  },
+  price: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.primary.backgroundColor,
+    marginBottom: 12,
+  },
+  newBadge: {
+    backgroundColor: "#ff4444",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  address: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#333",
+  },
+  distance: {
+    fontSize: 12,
+    color: "#999",
+  },
+  locationSection: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+    paddingHorizontal: 16,
+  },
+  acceptButton: {
+    flex: 0.6,
+    backgroundColor: colors.primary.backgroundColor,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  acceptButtonText: {
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  rejectButton: {
+    flex: 0.35,
+    backgroundColor: "#fff",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  rejectButtonText: {
+    color: "#000",
+  },
+  // Modal
+  blurContainer: {
+    flex: 1,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 8,
+    flexDirection: "column",
+  },
+  confirmMessage: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 20,
+  },
+  confirmButtonContainer: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  confirmRejectButton: {
+    flex: 1,
+    paddingVertical: 12,
+    backgroundColor: "#ff4444",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmRejectButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.primary.backgroundColor,
+    marginTop: 12,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  doneBadge: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    borderRadius: 4,
+  },
+  doneButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fff",
+    textAlign: "center",
+  },
+  moreOptionsButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  moreOptionsText: {
+    fontSize: 20,
+    color: "#333",
+    fontWeight: "bold",
+  },
+  cancelOrderButton: {
+    backgroundColor: "#ff4444",
+    marginTop: 12,
+    marginHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  cancelButtonOptionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fff",
+  },
+});
