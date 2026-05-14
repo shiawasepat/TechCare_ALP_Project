@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('service_centers', function (Blueprint $table) {
             $table->id("id_service_center");
             $table->foreignId('id_mitra')->unique()->constrained('mitras', 'id_mitra');
-            $table->foreignId('id_service')->constrained('services', 'id_service');
-            $table->foreignId('id_rating')->constrained('ratings', 'id_rating');
-            $table->string('nama_service_center');
+            $table->foreignId('id_service')->nullable()->constrained('services', 'id_service');
+            $table->foreignId('id_rating')->nullable()->constrained('ratings', 'id_rating');
+            $table->string('name_service_center');
             $table->string('deskripsi_service_center');
             $table->string('lokasi_service_center');
             $table->enum('status_service_center', ['buka', 'tutup'])-> default('buka');

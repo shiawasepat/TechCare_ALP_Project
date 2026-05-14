@@ -26,6 +26,8 @@ class User extends Authenticatable
 
     ];
 
+    protected $primaryKey = 'id_user';
+
     public function messages()
 {
     return $this->hasMany(Message::class, 'id_sender');
