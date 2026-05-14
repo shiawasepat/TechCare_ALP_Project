@@ -18,7 +18,11 @@ class Service_Center extends Authenticatable
      * The attributes that are mass assignable.
      *
      * @var list<string>
+     * 
+     * 
      */
+
+    protected $table = 'service_centers'; // this shit better work mfs
     protected $fillable = [
         'id_mitra',
         'id_service',
