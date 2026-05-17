@@ -32,10 +32,15 @@ class UserController extends Controller
             'contact' => 'required|string|max:20',
         ]);
 
+        $validated['password'] = bcrypt($validated['password']);
+
         $user = User::create($validated);
+
+        $token = $user->createToken('react_native_app')->plainTextToken;
         return response()->json([
             'message' => 'User created successfully',
-            'user' => $user
+            'user' => $user,
+            'token' => $token
         ], 201);
     }
 

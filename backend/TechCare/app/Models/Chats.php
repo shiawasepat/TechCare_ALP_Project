@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Chats extends Model
 {
+    protected $primaryKey = 'id_chats';
     protected $fillable = [
         'id_order',
         
@@ -21,6 +22,6 @@ class Chats extends Model
 
         public function messages()
     {
-        return $this->hasMany(Message::class, 'id_chat', 'id_chat');
+        return $this->hasMany(Message::class, 'id_chats', 'id_chats');
     }
 }
