@@ -11,7 +11,7 @@ export function MitraBottomNavigation() {
 
   return (
     <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/order-view")}>
+      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/order-view" as any)}>
         <View style={styles.bottomNavActiveIconWrap}>
           <Feather name="home" size={22} color={isActiveRoute("/mitra/order-view") ? "#2D6BFF" : "#5B6170"} />
         </View>
@@ -19,23 +19,17 @@ export function MitraBottomNavigation() {
         {isActiveRoute("/mitra/order-view") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
-      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/history")}>
-        <Feather name="clock" size={22} color={isActiveRoute("/mitra/history") ? "#2D6BFF" : "#5B6170"} />
-        <Text style={isActiveRoute("/mitra/history") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>History</Text>
-        {isActiveRoute("/mitra/history") ? <View style={styles.activeDot} /> : null}
-      </Pressable>
-
-      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/mitra-chat")}>
+      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/mitra-chat" as any)}>
         <MaterialCommunityIcons name="chat-outline" size={22} color={isActiveRoute("/mitra/mitra-chat") ? "#2D6BFF" : "#5B6170"} />
         <Text style={isActiveRoute("/mitra/mitra-chat") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Chat</Text>
         {isActiveRoute("/mitra/mitra-chat") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
-      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/profile")}>
-        <Feather name="user" size={22} color={isActiveRoute("/mitra/profile") ? "#2D6BFF" : "#5B6170"} />
-        <Text style={isActiveRoute("/mitra/profile") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Profile</Text>
-        {isActiveRoute("/mitra/profile") ? <View style={styles.activeDot} /> : null}
-      </Pressable>
+      {/* <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/history")}>
+        <Feather name="clock" size={22} color={isActiveRoute("/mitra/history") ? "#2D6BFF" : "#5B6170"} />
+        <Text style={isActiveRoute("/mitra/history") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>History</Text>
+        {isActiveRoute("/mitra/history") ? <View style={styles.activeDot} /> : null}
+      </Pressable> */}
     </View>
   );
 }

@@ -1,13 +1,17 @@
 import { router } from "expo-router";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomNavigation } from "@/components/BottomNavigation";
 
 export default function ChatScreen() {
+	const insets = useSafeAreaInsets();
+
 	return (
-		<SafeAreaView style={styles.safeArea}>
+		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<View style={styles.header}>
+			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
 				<Pressable style={styles.backButton} onPress={() => router.back()}>
 					<Feather name="arrow-left" size={22} color="#111827" />
 				</Pressable>
@@ -57,7 +61,7 @@ const styles = StyleSheet.create({
 	},
 	content: {
 		paddingHorizontal: 20,
-		paddingTop: 10,
+		paddingTop: 14,
 	},
 	emptyCard: {
 		backgroundColor: "#FFFFFF",

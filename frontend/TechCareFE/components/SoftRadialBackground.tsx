@@ -1,5 +1,6 @@
 import React, { ReactNode, useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View, SafeAreaView } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props {
   children: ReactNode;
@@ -94,7 +95,7 @@ const SoftRadialBackground = ({ children, animated = false }: Props) => {
         />
       </View>
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
         {children}
       </SafeAreaView>
     </View>
