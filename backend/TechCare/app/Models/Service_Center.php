@@ -6,10 +6,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 
-class Service_Center extends Authenticatable
+class Service_Center extends Model
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -18,11 +18,13 @@ class Service_Center extends Authenticatable
      * The attributes that are mass assignable.
      *
      * @var list<string>
+     * 
+     * 
      */
+    protected $primaryKey = 'id_service_center';
+    protected $table = 'service_centers'; // this shit better work mfs
     protected $fillable = [
         'id_mitra',
-        'id_service',
-        'id_rating',
         'name_service_center',
         'deskripsi_service_center',
         'lokasi_service_center',
@@ -30,6 +32,8 @@ class Service_Center extends Authenticatable
         'foto_service_center',
 
     ];
+
+   
 
 
 

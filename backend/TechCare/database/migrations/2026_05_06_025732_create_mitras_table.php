@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('mitras', function (Blueprint $table) {
             $table->id('id_mitra');
+            // $table->foreignId('id_service_center')->constrained('service_centers', 'id_service_center'); tidak diperlukan untuk one-to-one relationship thingy magic
             $table->string('email')->unique();
             $table->string('password');
             $table->timestamps();
