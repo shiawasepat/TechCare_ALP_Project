@@ -3,8 +3,10 @@ import { EyeIcon } from "@/components/svg/EyeIcon";
 import { Image, View, Text, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function register() {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
@@ -14,9 +16,9 @@ export function register() {
   const handleRegister = () => {};
 
   return (
-    <View style={[styles.container, styles.content]}>
+    <SafeAreaView style={[styles.container, styles.content]} edges={["top", "left", "right"]}>
       {/* Logo and Title */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 24 }]}>
         <View style={styles.titleContainer}>
           <Text style={styles.titleTech}>Tech</Text>
           <Text style={styles.titleCare}>Care</Text>
@@ -67,7 +69,7 @@ export function register() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -81,7 +83,6 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: "center",
-    paddingTop: 40,
     paddingBottom: 20,
   },
   titleContainer: {

@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomNavigation } from "@/components/BottomNavigation";
 
 const historyItems = [
@@ -10,10 +11,12 @@ const historyItems = [
 ];
 
 export default function HistoryScreen() {
+	const insets = useSafeAreaInsets();
+
 	return (
-		<SafeAreaView style={styles.safeArea}>
+		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<View style={styles.header}>
+			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
 				<Pressable style={styles.backButton} onPress={() => router.back()}>
 					<Feather name="arrow-left" size={22} color="#111827" />
 				</Pressable>
@@ -68,7 +71,7 @@ const styles = StyleSheet.create({
 	},
 	content: {
 		paddingHorizontal: 20,
-		paddingTop: 10,
+		paddingTop: 14,
 		gap: 12,
 	},
 	card: {

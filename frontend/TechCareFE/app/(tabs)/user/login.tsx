@@ -3,8 +3,10 @@ import { useState } from "react";
 import { router, useRouter } from "expo-router";
 import { EyeIcon } from "@/components/svg/EyeIcon";
 import { colors as defaultColor } from "@/styles/colors";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function login() {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,9 +36,10 @@ export function login() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       {/* Logo and Title */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 24 }]}>
         <View style={styles.titleContainer}>
           <Text style={styles.titleTech}>Tech</Text>
           <Text style={styles.titleCare}>Care</Text>
@@ -81,7 +84,8 @@ export function login() {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -90,12 +94,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: defaultColor.background.backgroundColor,
   },
+  scroll: {
+    flex: 1,
+  },
   content: {
     flexGrow: 1,
   },
   headerContainer: {
     alignItems: "center",
-    paddingTop: 40,
     paddingBottom: 20,
   },
   titleContainer: {

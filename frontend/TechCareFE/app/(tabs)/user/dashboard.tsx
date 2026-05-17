@@ -5,7 +5,9 @@ import { router } from "expo-router";
 import { Feather, FontAwesome6 } from "@expo/vector-icons";
 import { colors as defaultColor } from "@/styles/colors";
 import { BottomNavigation } from "@/components/BottomNavigation";
-import { Defs, LinearGradient, Rect, Stop, Svg } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
+// expo LinearGradient typing sometimes conflicts with TSX; use alias to satisfy JSX typing
+const LGradient: any = LinearGradient;
 import { getCurrentUserLocation } from "@/utils/location";
 
 type FilterKey = "Nearest" | "Top Rated" | "Open Now" | "Filter";
@@ -271,16 +273,14 @@ export function dashboard() {
 				</View>
 
 						<View style={styles.offerCard} {...panResponder.panHandlers}>
-							<Svg width="100%" height="100%" viewBox="0 0 100 100" style={styles.offerGradient} preserveAspectRatio="none" pointerEvents="none">
-								<Defs>
-									<LinearGradient id="promoGradient" x1="0" y1="0" x2="1" y2="0">
-										<Stop offset="0%" stopColor="#DCEBFF" stopOpacity="1" />
-										<Stop offset="55%" stopColor="#EEF5FF" stopOpacity="1" />
-										<Stop offset="100%" stopColor="#EAF3FF" stopOpacity="1" />
-									</LinearGradient>
-								</Defs>
-								<Rect x="0" y="0" width="100" height="100" fill="url(#promoGradient)" />
-							</Svg>
+							{/* Use expo-linear-gradient so the gradient follows the View's borderRadius exactly */}
+							<LGradient
+								colors={["#DCEBFF", "#EEF5FF", "#EAF3FF"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 0 }}
+								style={styles.offerGradient}
+								pointerEvents="none"
+							/>
 				<View style={styles.offerTextBlock}>
 					<Text style={styles.offerTitle}>{activePromo.title}</Text>
 					<Text style={styles.offerSubtitle}>{activePromo.subtitle}</Text>
