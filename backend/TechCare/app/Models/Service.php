@@ -11,6 +11,8 @@ class Service extends Model
      *
      * @var array<int, string>
      */
+
+    protected $primaryKey = 'id_service'; // dunno what to add here so i just put the primary key, hope it works
     protected $fillable = [
         'id_service_center',
         'nama_service',

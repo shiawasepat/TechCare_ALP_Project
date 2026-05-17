@@ -30,10 +30,15 @@ class MitraController extends Controller
 
          ]);
 
+            $validated['password'] = bcrypt($validated['password']);
+
+            $Mitra = Mitra::create($validated);
+            $token = $Mitra->createToken('react_native_app')->plainTextToken;
          $mitra = Mitra::create($validated);
          return response()->json([
              'message' => 'Mitra created successfully',
-             'mitra' => $mitra
+             'mitra' => $mitra,
+             'token' => $token
          ], 201);
      }
     

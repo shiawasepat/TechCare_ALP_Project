@@ -8,17 +8,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Laravel\Sanctum\HasApiTokens;
 
 class Mitra extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
-    /**
+     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
-     */
+
+        */
+    protected $primaryKey = 'id_mitra';
     protected $fillable = [
         'email',
         'password',

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Rating extends Model
 {
+    protected $primaryKey = 'id_rating';
     protected $fillable = [
         'id_service_center',
         'id_user',
@@ -19,6 +20,11 @@ class Rating extends Model
     public function serviceCenter()
     {
         return $this->belongsTo(Service_Center::class, 'id_service_center', 'id_service_center');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
 
     
