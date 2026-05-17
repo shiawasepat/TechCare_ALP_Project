@@ -2,6 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "@/styles/colors";
 
 export function MitraBottomNavigation() {
   const pathname = usePathname();
@@ -56,8 +57,7 @@ const styles = StyleSheet.create({
   },
   bottomNavItem: {
     alignItems: "center",
-    justifyContent: "flex-end",
-    width: 84,
+    justifyContent: "flex-start",
     minHeight: 48,
   },
   bottomNavActiveIconWrap: {
@@ -71,13 +71,13 @@ const styles = StyleSheet.create({
   bottomNavLabelActive: {
     marginTop: 3,
     fontSize: 12,
-    color: "#2D6BFF",
+    color: colors.primary.backgroundColor,
   },
   activeDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#2D6BFF",
+    backgroundColor: colors.primary.backgroundColor,
     marginTop: 4,
   },
 });
