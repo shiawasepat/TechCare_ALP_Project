@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Message extends Model
 {
     protected $fillable = [
-        'id_chat',
-        'id_sender',
-        'sender_role',
+        'id_chats',
+        'sender_id',
+        'sender_type',
         'pesan'
     ];
 
@@ -18,16 +18,12 @@ class Message extends Model
 
     public function chat()
     {
-        return $this->belongsTo(Chats::class, 'id_chat', 'id_chat');
+        return $this->belongsTo(Chats::class, 'id_chats', 'id_chats');
     }
-
-        public function sender()
+    // decided using polymorph not manually too much hassle gay
+    public function sender()
     {
-        if ($this->sender_role === 'user') {
-            return $this->belongsTo(User::class, 'id_sender');
-        }
-
-        return $this->belongsTo(Mitra::class, 'id_sender', 'id_mitra');
+        return $this->morphTo();
     }
 }
 

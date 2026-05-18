@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id('id_payment');
             $table->foreignId('id_order')->constrained('orders', 'id_order')->onDelete('cascade');
-            $table->enum('metode_pembayaran', ['cash' , 'credit_card', 'bank_transfer', 'e_wallet']);
+            $table->enum('metode_pembayaran', ['cash' , 'ovo', 'gopay', 'dana']);
             $table->decimal('jumlah_pembayaran', 10, 2);
             $table->timestamps();
         });

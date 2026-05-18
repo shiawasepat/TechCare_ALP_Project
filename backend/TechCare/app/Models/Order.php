@@ -8,12 +8,23 @@ use illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
+    protected $primaryKey = 'id_order';
     protected $fillable = [
         'id_service',
         'id_user',
-        'id_payment'
+        'status_order',
     ];
 
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'id_user', 'id_user');
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class, 'id_service', 'id_service');
+    }
 
 
     public function payment()
@@ -22,10 +33,6 @@ class Order extends Model
     }
 
 
-    public function orderView()
-    {
-        return $this->belongsTo(Order_view::class, 'id_order_view', 'id_order_view');
-    }
 
 
     public function chat()

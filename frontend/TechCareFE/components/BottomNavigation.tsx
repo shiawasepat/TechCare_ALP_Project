@@ -1,13 +1,15 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function BottomNavigation() {
 	const pathname = usePathname();
+	const insets = useSafeAreaInsets();
 	const isActiveRoute = (route: string) => pathname === route;
 
 	return (
-		<View style={styles.bottomNav}>
+		<View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
 			<Pressable style={styles.bottomNavItem} onPress={() => router.push("/user/dashboard")}>
 				<View style={styles.bottomNavActiveIconWrap}>
 					<Feather name="home" size={22} color={isActiveRoute("/user/dashboard") ? "#2D6BFF" : "#5B6170"} />

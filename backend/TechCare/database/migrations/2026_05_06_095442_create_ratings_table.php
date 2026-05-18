@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('ratings', function (Blueprint $table) {
             $table->id('id_rating');
-            $table->foreignId('id_servuce_center')->constrained('service_centers', 'id_service_center');
+            $table->foreignId('id_service_center')->constrained('service_centers', 'id_service_center');
             $table->foreignId('id_user')->constrained('users', 'id_user');
-            $table->unsignedTinyInteger('rating')->max(5);
+            $table->unsignedTinyInteger('nilai_rating');
+            $table->string('kesan')->nullable();
             $table->timestamps();
         });
     }

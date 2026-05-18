@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id('id_order');
             $table->foreignId('id_service')->constrained('services', 'id_service');
             $table->foreignId('id_user')->constrained('users', 'id_user');
-            $table->foreignId('id_payment')->constrained('payments', 'id_payment');
+            $table->enum('status_order', ['pending', 'in_progress', 'completed'])->default('pending');
+            // $table->foreignId('id_payment')->constrained('payments', 'id_payment'); no need sudah di declare di  model order
             $table->timestamps();
         });
     }

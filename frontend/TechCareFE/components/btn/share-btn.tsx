@@ -1,4 +1,3 @@
-import { colors } from "@/styles/colors";
 import { Image } from "react-native";
 
 export function ShareBtn() {
