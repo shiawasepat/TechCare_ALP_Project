@@ -4,33 +4,53 @@ import { router } from "expo-router";
 import { EyeIcon } from "@/components/svg/EyeIcon";
 import { Ionicons } from "@expo/vector-icons";
 import { colors as defaultColor } from "@/styles/colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export function MitraLogin() {
-  const [username, setUsername] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSignIn = () => {
-    // Dummy credentials for testing
-    const dummyUsername = "tech";
-    const dummyPassword = "123";
+  const getMitraLoginData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/mitra/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
+      const json = await response.json();
+
+      // Check if response was successful
+      if (!response.ok) {
+        alert(json.message || "Login failed. Please try again.");
+        return;
+      }
+
+      // Store the token
+      await AsyncStorage.setItem("authToken", json.token);
+
+      // Navigate to home
+      router.replace("./dashboard");
+    } catch (error) {
+      console.error("Error during login:", error);
+      alert("An error occurred during login. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignIn = () => {
     // Validate inputs
-    if (!username || !password) {
+    if (!email || !password) {
       alert("Please fill in all fields");
       return;
-    }
-
-    // For testing: log the credentials
-    console.log("Sign in attempt:", { username, password });
-
-    // Mock successful login - replace with actual API call
-    if (username === dummyUsername && password === dummyPassword) {
-      console.log("Login successful!");
-      // Navigate to home screen or dashboard
-      router.push("./order-view");
     } else {
-      alert("Invalid credentials. Try: tech / 123");
+      getMitraLoginData();
     }
   };
 
@@ -43,8 +63,8 @@ export function MitraLogin() {
 
       {/* Blue Container */}
       <View style={styles.blueContainer}>
-        {/* Username Input */}
-        <TextInput placeholder="Username" value={username} onChangeText={setUsername} placeholderTextColor="#999" style={styles.input} />
+        {/* Email Input */}
+        <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
 
         {/* Password Input */}
         <View style={styles.passwordContainer}>
@@ -56,8 +76,8 @@ export function MitraLogin() {
         </View>
 
         {/* Sign In Button */}
-        <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
-          <Text style={styles.signInButtonText}>Sign in</Text>
+        <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={isLoading}>
+          <Text style={styles.signInButtonText}>{isLoading ? "Signing in..." : "Sign in"}</Text>
         </TouchableOpacity>
 
         {/* Create Account Link */}
