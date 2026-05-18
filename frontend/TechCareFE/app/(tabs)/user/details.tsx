@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors as defaultColor } from "@/styles/colors";
-import { BackBtn } from "@/components/btn/back-btn";
+import BackButtonHeader from "@/components/BackButtonHeader";
 import { SaveBtn } from "@/components/btn/save-btn";
 import { ShareBtn } from "@/components/btn/share-btn";
 import { StarIcon } from "@/components/svg/Star";
@@ -150,6 +150,9 @@ export function details() {
           <Text>Selected Service</Text>
           <Text style={{ fontWeight: "bold" }}>{selectedService}</Text>
         </View>
+        <TouchableOpacity style={styles.chatButton} onPress={() => router.push('/user/chat')}>
+          <Text style={styles.chatButtonText}>Chat</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.continueButton}>
@@ -329,6 +332,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopColor: defaultColor.primary.backgroundColor,
     borderTopWidth: 1,
+  },
+  chatButton: {
+    marginLeft: "auto",
+    backgroundColor: defaultColor.primary.backgroundColor,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatButtonText: {
+    color: "#fff",
+    fontWeight: "600",
   },
   buttonContainer: {
     backgroundColor: defaultColor.background.backgroundColor,

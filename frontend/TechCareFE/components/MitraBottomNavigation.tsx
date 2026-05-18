@@ -1,11 +1,11 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, usePathname } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "@/styles/colors";
 
 export function MitraBottomNavigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const isActiveRoute = (route: string) => pathname === route;
 
@@ -13,10 +13,10 @@ export function MitraBottomNavigation() {
     <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/order-view" as any)}>
         <View style={styles.bottomNavActiveIconWrap}>
-          <Feather name="home" size={22} color={isActiveRoute("/mitra/order-view") ? "#2D6BFF" : "#5B6170"} />
+          <Feather name="home" size={22} color={isActiveRoute("/(tabs)/mitra/order-view") ? "#2D6BFF" : "#5B6170"} />
         </View>
-        <Text style={isActiveRoute("/mitra/order-view") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Home</Text>
-        {isActiveRoute("/mitra/order-view") ? <View style={styles.activeDot} /> : null}
+        <Text style={isActiveRoute("/(tabs)/mitra/order-view") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Home</Text>
+        {isActiveRoute("/(tabs)/mitra/order-view") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
       <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/mitra-chat" as any)}>
@@ -57,7 +57,8 @@ const styles = StyleSheet.create({
   },
   bottomNavItem: {
     alignItems: "center",
-    justifyContent: "flex-start",
+    justifyContent: "flex-end",
+    width: 84,
     minHeight: 48,
   },
   bottomNavActiveIconWrap: {
@@ -71,13 +72,13 @@ const styles = StyleSheet.create({
   bottomNavLabelActive: {
     marginTop: 3,
     fontSize: 12,
-    color: colors.primary.backgroundColor,
+    color: "#2D6BFF",
   },
   activeDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.primary.backgroundColor,
+    backgroundColor: "#2D6BFF",
     marginTop: 4,
   },
 });

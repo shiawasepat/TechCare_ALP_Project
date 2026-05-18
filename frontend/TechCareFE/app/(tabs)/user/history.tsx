@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import BackButtonHeader from "@/components/BackButtonHeader";
 
 const historyItems = [
 	{ title: "Mugen Computer Pettarani", subtitle: "Completed repair", time: "2 days ago" },
