@@ -7,13 +7,54 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 export function register() {
   const insets = useSafeAreaInsets();
-  const [name, setName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+  const [formData, setFormData] = useState({
+    name: "",
+    phoneNumber: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = () => {};
+  const handleRegister = async () => {
+    if (!formData.name || !formData.phoneNumber || !formData.email || !formData.password || !formData.confirmPassword) {
+      alert("Please fill in all fields");
+      return;
+    }
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          contact: formData.phoneNumber,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        alert(json.message || "Registration failed. Please try again.");
+        return;
+      }
+
+      setIsLoading(true);
+
+      alert("Registration successful!");
+      router.push("/user/login");
+    } catch (error) {
+      console.error("Error during registration:", error);
+      alert("An error occurred during registration. Please try again.");
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, styles.content]} edges={["top", "left", "right"]}>
@@ -28,17 +69,17 @@ export function register() {
       {/* Blue Container */}
       <View style={styles.blueContainer}>
         {/* Name Input */}
-        <TextInput placeholder="Name" value={name} onChangeText={setName} placeholderTextColor="#999" style={styles.input} />
+        <TextInput placeholder="Name" value={formData.name} onChangeText={(value) => handleInputChange("name", value)} placeholderTextColor="#999" style={styles.input} />
 
         {/* Phone Number Input */}
-        <TextInput placeholder="Contact No." value={phoneNumber} onChangeText={(value) => setPhoneNumber(value.replace(/[^0-9]/g, ""))} placeholderTextColor="#999" style={styles.input} />
+        <TextInput placeholder="Contact No." value={formData.phoneNumber} onChangeText={(value) => handleInputChange("phoneNumber", value.replace(/[^0-9]/g, ""))} placeholderTextColor="#999" style={styles.input} keyboardType="phone-pad" />
 
         {/* Email Input */}
-        <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
+        <TextInput placeholder="Email" value={formData.email} onChangeText={(value) => handleInputChange("email", value)} placeholderTextColor="#999" style={styles.input} />
 
         {/* Password Input */}
         <View style={styles.passwordContainer}>
-          <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
+          <TextInput placeholder="Password" value={formData.password} onChangeText={(value) => handleInputChange("password", value)} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
           <View style={styles.divider} />
           <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
             <EyeIcon show={showPassword} />
@@ -47,7 +88,14 @@ export function register() {
 
         {/* Confirm Password */}
         <View style={styles.passwordContainer}>
-          <TextInput placeholder="Confirm Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
+          <TextInput
+            placeholder="Confirm Password"
+            value={formData.confirmPassword}
+            onChangeText={(value) => handleInputChange("confirmPassword", value)}
+            secureTextEntry={!showPassword}
+            placeholderTextColor="#999"
+            style={styles.passwordInput}
+          />
           <View style={styles.divider} />
           <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
             <EyeIcon show={showPassword} />
@@ -55,8 +103,8 @@ export function register() {
         </View>
 
         {/* Create Account Button */}
-        <TouchableOpacity style={styles.signInButton} onPress={handleRegister}>
-          <Text style={styles.signInButtonText}>Create account</Text>
+        <TouchableOpacity style={styles.signInButton} onPress={handleRegister} disabled={isLoading}>
+          <Text style={styles.signInButtonText}>{isLoading ? "Creating Account..." : "Create Account"}</Text>
         </TouchableOpacity>
 
         {/* Sign In Link */}
