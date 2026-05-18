@@ -34,6 +34,9 @@ export default function ChatListScreen() {
 	const insets = useSafeAreaInsets();
 	const router = useRouter();
 
+export default function ChatScreen() {
+	const insets = useSafeAreaInsets();
+
 	return (
 <<<<<<< Updated upstream
 		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>

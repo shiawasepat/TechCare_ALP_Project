@@ -17,7 +17,12 @@ export default function HistoryScreen() {
 	return (
 		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<BackButtonHeader title="History" onBack={() => router.back()} />
+			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+				<Pressable style={styles.backButton} onPress={() => router.back()}>
+					<Feather name="arrow-left" size={22} color="#111827" />
+				</Pressable>
+				<Text style={styles.title}>History</Text>
+			</View>
 
 			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 				{historyItems.map((item) => (

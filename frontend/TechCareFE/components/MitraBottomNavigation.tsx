@@ -2,6 +2,10 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+<<<<<<< HEAD
+=======
+import { colors } from "@/styles/colors";
+>>>>>>> 74ed55930889a22ba2f0abff338611529f4d26be
 
 export function MitraBottomNavigation() {
   const pathname = usePathname();
@@ -11,7 +15,7 @@ export function MitraBottomNavigation() {
 
   return (
     <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/(tabs)/mitra/order-view" as any) }>
+      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/order-view" as any)}>
         <View style={styles.bottomNavActiveIconWrap}>
           <Feather name="home" size={22} color={isActiveRoute("/(tabs)/mitra/order-view") ? "#2D6BFF" : "#5B6170"} />
         </View>
@@ -19,10 +23,10 @@ export function MitraBottomNavigation() {
         {isActiveRoute("/(tabs)/mitra/order-view") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
-      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/(tabs)/mitra/mitra-chat") }>
-        <MaterialCommunityIcons name="chat-outline" size={22} color={isActiveRoute("/(tabs)/mitra/mitra-chat") ? "#2D6BFF" : "#5B6170"} />
-        <Text style={isActiveRoute("/(tabs)/mitra/mitra-chat") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Chat</Text>
-        {isActiveRoute("/(tabs)/mitra/mitra-chat") ? <View style={styles.activeDot} /> : null}
+      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/mitra-chat" as any)}>
+        <MaterialCommunityIcons name="chat-outline" size={22} color={isActiveRoute("/mitra/mitra-chat") ? "#2D6BFF" : "#5B6170"} />
+        <Text style={isActiveRoute("/mitra/mitra-chat") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Chat</Text>
+        {isActiveRoute("/mitra/mitra-chat") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
       {/* <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/history")}>
@@ -57,8 +61,12 @@ const styles = StyleSheet.create({
   },
   bottomNavItem: {
     alignItems: "center",
+<<<<<<< HEAD
     justifyContent: "flex-end",
     width: 84,
+=======
+    justifyContent: "flex-start",
+>>>>>>> 74ed55930889a22ba2f0abff338611529f4d26be
     minHeight: 48,
   },
   bottomNavActiveIconWrap: {
@@ -72,13 +80,21 @@ const styles = StyleSheet.create({
   bottomNavLabelActive: {
     marginTop: 3,
     fontSize: 12,
+<<<<<<< HEAD
     color: "#2D6BFF",
+=======
+    color: colors.primary.backgroundColor,
+>>>>>>> 74ed55930889a22ba2f0abff338611529f4d26be
   },
   activeDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
+<<<<<<< HEAD
     backgroundColor: "#2D6BFF",
+=======
+    backgroundColor: colors.primary.backgroundColor,
+>>>>>>> 74ed55930889a22ba2f0abff338611529f4d26be
     marginTop: 4,
   },
 });
