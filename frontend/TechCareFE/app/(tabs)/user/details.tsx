@@ -2,7 +2,6 @@ import { Animated, Image, ImageSourcePropType, Text, View, StyleSheet, Touchable
 import { useState, useEffect, useRef } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
-import { useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors as defaultColor } from "@/styles/colors";
 import BackButtonHeader from "@/components/BackButtonHeader";
@@ -24,7 +23,6 @@ const serviceImageMap: Record<string, ImageSourcePropType> = {
 export function details() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string }>();
   const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "Mugen Computer Pettarani";
   const serviceAddress = typeof params.address === "string" && params.address.length > 0 ? params.address : "Jl. A. P. Pettarani No.89a, Makassar";
@@ -60,7 +58,10 @@ export function details() {
 
   return (
     <SafeAreaView style={styles.mainContainer} edges={["top", "left", "right"]}>
-      <BackButtonHeader title="Details" onBack={() => router.back()} />
+      <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
+        <BackBtn />
+        <Text style={styles.detailsText}>Details</Text>
+      </View>
 
       <ScrollView style={styles.container}>
         {/* Image */}
