@@ -1,11 +1,12 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { router, usePathname } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/styles/colors";
 
 export function MitraBottomNavigation() {
   const pathname = usePathname();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const isActiveRoute = (route: string) => pathname === route;
 
@@ -13,10 +14,10 @@ export function MitraBottomNavigation() {
     <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/order-view" as any)}>
         <View style={styles.bottomNavActiveIconWrap}>
-          <Feather name="home" size={22} color={isActiveRoute("/mitra/order-view") ? "#2D6BFF" : "#5B6170"} />
+          <Feather name="home" size={22} color={isActiveRoute("/(tabs)/mitra/order-view") ? "#2D6BFF" : "#5B6170"} />
         </View>
-        <Text style={isActiveRoute("/mitra/order-view") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Home</Text>
-        {isActiveRoute("/mitra/order-view") ? <View style={styles.activeDot} /> : null}
+        <Text style={isActiveRoute("/(tabs)/mitra/order-view") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Home</Text>
+        {isActiveRoute("/(tabs)/mitra/order-view") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
       <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/mitra-chat" as any)}>

@@ -2,9 +2,10 @@ import { Animated, Image, ImageSourcePropType, Text, View, StyleSheet, Touchable
 import { useState, useEffect, useRef } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors as defaultColor } from "@/styles/colors";
-import { BackBtn } from "@/components/btn/back-btn";
+import BackButtonHeader from "@/components/BackButtonHeader";
 import { SaveBtn } from "@/components/btn/save-btn";
 import { ShareBtn } from "@/components/btn/share-btn";
 import { StarIcon } from "@/components/svg/Star";
@@ -23,6 +24,7 @@ const serviceImageMap: Record<string, ImageSourcePropType> = {
 export function details() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string }>();
   const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "Mugen Computer Pettarani";
   const serviceAddress = typeof params.address === "string" && params.address.length > 0 ? params.address : "Jl. A. P. Pettarani No.89a, Makassar";
@@ -58,10 +60,7 @@ export function details() {
 
   return (
     <SafeAreaView style={styles.mainContainer} edges={["top", "left", "right"]}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
-        <BackBtn />
-        <Text style={styles.detailsText}>Details</Text>
-      </View>
+      <BackButtonHeader title="Details" onBack={() => router.back()} />
 
       <ScrollView style={styles.container}>
         {/* Image */}
@@ -150,6 +149,9 @@ export function details() {
           <Text>Selected Service</Text>
           <Text style={{ fontWeight: "bold" }}>{selectedService}</Text>
         </View>
+        <TouchableOpacity style={styles.chatButton} onPress={() => router.push('/user/chat')}>
+          <Text style={styles.chatButtonText}>Chat</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.continueButton}>
@@ -329,6 +331,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopColor: defaultColor.primary.backgroundColor,
     borderTopWidth: 1,
+  },
+  chatButton: {
+    marginLeft: "auto",
+    backgroundColor: defaultColor.primary.backgroundColor,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatButtonText: {
+    color: "#fff",
+    fontWeight: "600",
   },
   buttonContainer: {
     backgroundColor: defaultColor.background.backgroundColor,

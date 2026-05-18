@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import BackButtonHeader from "@/components/BackButtonHeader";
 
 const historyItems = [
 	{ title: "Mugen Computer Pettarani", subtitle: "Completed repair", time: "2 days ago" },
@@ -16,12 +17,7 @@ export default function HistoryScreen() {
 	return (
 		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-				<Pressable style={styles.backButton} onPress={() => router.back()}>
-					<Feather name="arrow-left" size={22} color="#111827" />
-				</Pressable>
-				<Text style={styles.title}>History</Text>
-			</View>
+			<BackButtonHeader title="History" onBack={() => router.back()} />
 
 			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 				{historyItems.map((item) => (
