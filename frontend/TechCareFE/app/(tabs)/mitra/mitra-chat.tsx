@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { MitraBottomNavigation } from "@/components/MitraBottomNavigation";
+import BackButtonHeader from "@/components/BackButtonHeader";
 import { colors } from "@/styles/colors";
 import { useState } from "react";
 
@@ -127,19 +128,7 @@ export default function MitraChatScreen() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
 
-        {/* Chat Header */}
-        <View style={styles.chatHeader}>
-          <TouchableOpacity onPress={() => setSelectedChat(null)}>
-            <Feather name="arrow-left" size={22} color="#111827" />
-          </TouchableOpacity>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.chatHeaderTitle}>{selectedChat.title}</Text>
-            <Text style={styles.chatHeaderSubtitle}>Online</Text>
-          </View>
-          <TouchableOpacity>
-            <Feather name="phone" size={20} color="#2D6BFF" />
-          </TouchableOpacity>
-        </View>
+        <BackButtonHeader title={selectedChat.title} subtitle="Online" onBack={() => setSelectedChat(null)} />
 
         {/* Messages */}
         <ScrollView style={styles.messagesContainer} showsVerticalScrollIndicator={false}>

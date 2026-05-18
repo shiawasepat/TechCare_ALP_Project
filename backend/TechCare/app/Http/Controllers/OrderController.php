@@ -21,27 +21,28 @@ class OrderController extends Controller
      * Store a newly created resource in storage.
      */
 public function store(Request $request)
-    {
-        // 1. Validate the service
-        $validated = $request->validate([
-            'id_service' => 'required|exists:services,id_service',
-        ]);
+{
+    // Validate incoming data from frontend
+    $validated = $request->validate([
+        'id_service'          => 'required|exists:services,id_service',
+        'tipe_order'          => 'required|in:reservasi,home_service',
+        
+        // 'required_if' means: if type is home_service, they MUST provide an address!
+        'alamat_home_service' => 'required_if:tipe_order,home_service|string|nullable',
+        'waktu_reservasi'     => 'required_if:tipe_order,reservasi|date|nullable',
+    ]);
 
-        // 2. Get the logged-in Customer
-        $user = $request->user();
-        $validated['id_user'] = $user->id_user;
+    $user = $request->user();
+    $validated['id_user'] = $user->id_user;
 
-        // 3. Create the Order (Database automatically sets status_order to 'pending'!)
-        $order = Order::create($validated);
+    $order = Order::create($validated);
+    $order->load(['service', 'user']);
 
-        // 4. Load relations so the app gets full checkout details instantly
-        $order->load(['service', 'user']);
-
-        return response()->json([
-            'message' => 'Order placed and broadcasted to Mitra!',
-            'order' => $order
-        ], 201);
-    }
+    return response()->json([
+        'message' => 'Order placed successfully!',
+        'order' => $order
+    ], 201);
+}
 
     /**
      * Display the specified resource.

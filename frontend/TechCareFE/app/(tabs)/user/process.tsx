@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Image, Touchable, Alert } from "react-native";
 import { colors } from "@/styles/colors";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { BackBtn } from "@/components/btn/back-btn";
+import BackButtonHeader from "@/components/BackButtonHeader";
 import { router } from "expo-router";
 import { useState } from "react";
 
@@ -34,13 +34,7 @@ export default function UserProcess() {
   ];
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <BackBtn />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order Status</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <BackButtonHeader title="Order Status" onBack={() => router.back()} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.contentContainer}>
