@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { useState } from "react";
 import { router, useRouter } from "expo-router";
@@ -10,80 +11,94 @@ export function login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const getLoginData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const json = await response.json();
+
+      // Check if response was successful
+      if (!response.ok) {
+        alert(json.message || "Login failed. Please try again.");
+        return;
+      }
+
+      // Store the token
+      await AsyncStorage.setItem("authToken", json.token);
+
+      // Navigate to home
+      router.replace("./dashboard");
+    } catch (error) {
+      console.error("Error during login:", error);
+      alert("An error occurred during login. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSignIn = () => {
-    // Dummy credentials for testing
-    const dummyEmail = "tech";
-    const dummyPassword = "123";
-
-    // Validate inputs
-    if (!email || !password) {
-      alert("Please fill in all fields");
-      return;
-    }
-
-    // For testing: log the credentials
-    console.log("Sign in attempt:", { email, password });
-
-    // Mock successful login - replace with actual API call
-    if (email === dummyEmail && password === dummyPassword) {
-      console.log("Login successful!");
-      // Navigate to home screen or dashboard
-      router.push("/user/dashboard");
-    } else {
-      alert("Invalid credentials. Try: tech / 123");
-    }
+    // Implement your login logic here (e.g., API call)
+    getLoginData();
   };
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Logo and Title */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top + 24 }]}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleTech}>Tech</Text>
-          <Text style={styles.titleCare}>Care</Text>
+        {/* Logo and Title */}
+        <View style={[styles.headerContainer, { paddingTop: insets.top + 24 }]}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleTech}>Tech</Text>
+            <Text style={styles.titleCare}>Care</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Blue Container */}
-      <View style={styles.blueContainer}>
-        {/* Google Sign In Button */}
-        <TouchableOpacity style={styles.googleButton}>
-          <Image source={require("../../../assets/Google.jpg")} style={styles.googleIcon} />
-          <Text style={styles.googleButtonText}>Sign in with Google</Text>
-        </TouchableOpacity>
-
-        {/* Or Divider */}
-        <Text style={styles.orText}>or</Text>
-
-        {/* Email Input */}
-        <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
-
-        {/* Password Input */}
-        <View style={styles.passwordContainer}>
-          <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-            <EyeIcon show={showPassword} />
+        {/* Blue Container */}
+        <View style={styles.blueContainer}>
+          {/* Google Sign In Button */}
+          <TouchableOpacity style={styles.googleButton}>
+            <Image source={require("../../../assets/Google.jpg")} style={styles.googleIcon} />
+            <Text style={styles.googleButtonText}>Sign in with Google</Text>
           </TouchableOpacity>
-        </View>
 
-        {/* Sign In Button */}
-        <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
-          <Text style={styles.signInButtonText}>Sign in</Text>
-        </TouchableOpacity>
+          {/* Or Divider */}
+          <Text style={styles.orText}>or</Text>
 
-        {/* Create Account Link */}
-        <View style={styles.createAccountContainer}>
-          <Text style={styles.createAccountText}>New here? </Text>
-          <TouchableOpacity>
-            <Text style={styles.createAccountLink} onPress={() => router.push("/user/register")}>
-              Create an account
-            </Text>
+          {/* Email Input */}
+          <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
+
+          {/* Password Input */}
+          <View style={styles.passwordContainer}>
+            <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+              <EyeIcon show={showPassword} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign In Button */}
+          <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={isLoading}>
+            <Text style={styles.signInButtonText}>{isLoading ? "Signing in..." : "Sign in"}</Text>
           </TouchableOpacity>
+
+          {/* Create Account Link */}
+          <View style={styles.createAccountContainer}>
+            <Text style={styles.createAccountText}>New here? </Text>
+            <TouchableOpacity>
+              <Text style={styles.createAccountLink} onPress={() => router.push("/user/register")}>
+                Create an account
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       </ScrollView>
     </SafeAreaView>
   );
