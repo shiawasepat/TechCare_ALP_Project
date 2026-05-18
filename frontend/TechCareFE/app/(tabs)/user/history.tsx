@@ -1,41 +1,37 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import BackButtonHeader from "@/components/BackButtonHeader";
-
-const historyItems = [
-	{ title: "Mugen Computer Pettarani", subtitle: "Completed repair", time: "2 days ago" },
-	{ title: "Elextra Komputer", subtitle: "Service scheduled", time: "1 week ago" },
-	{ title: "HND Computer", subtitle: "Canceled booking", time: "2 weeks ago" },
-];
+import { historyItems } from "./historyData";
 
 export default function HistoryScreen() {
-	const insets = useSafeAreaInsets();
-
 	return (
 		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-				<Pressable style={styles.backButton} onPress={() => router.back()}>
-					<Feather name="arrow-left" size={22} color="#111827" />
-				</Pressable>
-				<Text style={styles.title}>History</Text>
-			</View>
+			<BackButtonHeader title="History" onBack={() => router.back()} />
 
 			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 				{historyItems.map((item) => (
-					<View key={item.title} style={styles.card}>
+					<Pressable
+						key={item.id}
+						style={styles.card}
+						onPress={() => router.push({ pathname: "/user/history/[id]", params: { id: item.id } })}
+					>
 						<View style={styles.iconWrap}>
 							<Feather name="clock" size={20} color="#2D6BFF" />
 						</View>
 						<View style={styles.textWrap}>
 							<Text style={styles.itemTitle}>{item.title}</Text>
-							<Text style={styles.itemSubtitle}>{item.subtitle}</Text>
+							<Text style={styles.itemSubtitle}>{item.serviceType}</Text>
 						</View>
-						<Text style={styles.timeText}>{item.time}</Text>
-					</View>
+						<View style={styles.metaWrap}>
+							<Text style={styles.priceText}>{item.price}</Text>
+							<Text style={styles.timeText}>{item.time}</Text>
+						</View>
+						<Feather name="chevron-right" size={18} color="#9CA3AF" />
+					</Pressable>
 				))}
 			</ScrollView>
 
@@ -99,15 +95,25 @@ const styles = StyleSheet.create({
 	textWrap: {
 		flex: 1,
 	},
+	metaWrap: {
+		alignItems: "flex-end",
+		marginRight: 8,
+	},
 	itemTitle: {
 		fontSize: 15.5,
-		fontWeight: "800",
+		fontWeight: "600",
 		color: "#111827",
 		marginBottom: 4,
 	},
 	itemSubtitle: {
 		fontSize: 13.5,
 		color: "#4B5563",
+	},
+	priceText: {
+		fontSize: 13,
+		fontWeight: "800",
+		color: "#111827",
+		marginBottom: 4,
 	},
 	timeText: {
 		fontSize: 12.5,

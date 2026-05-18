@@ -20,27 +20,70 @@ type ConversationEntry = Message & {
   deletedMode?: DeletedMode;
 };
 
-const initialMessages: Message[] = [
-  { id: "2", text: "What took you guys so long? I dont see the technician moving at all.", role: "user", time: "08:46", seen: false },
-  { id: "1", text: "Sorry— our technician delayed by traffic", role: "agent", time: "08:44" },
-];
+type ConversationPreset = {
+  subtitle: string;
+  online?: boolean;
+  quickReplies: string[];
+  initialMessages: Message[];
+};
+
+const conversationPresets: Record<string, ConversationPreset> = {
+  "Mugen Computer Pettarani": {
+    subtitle: "Usually replies in a few minutes",
+    online: true,
+    quickReplies: ["Please update me", "Is the technician nearby?", "What is the ETA?"] ,
+    initialMessages: [
+      { id: "2", text: "The technician is on the way and should arrive soon.", role: "agent", time: "08:44" },
+      { id: "1", text: "Thanks, please keep me posted if there is any delay.", role: "user", time: "08:46", seen: false },
+    ],
+  },
+  "Elextra Komputer": {
+    subtitle: "Replies during business hours",
+    online: true,
+    quickReplies: ["Can I reschedule?", "Do you have spare parts?", "Please confirm the booking"],
+    initialMessages: [
+      { id: "2", text: "Your schedule is confirmed for tomorrow at 10:00 AM.", role: "agent", time: "09:12" },
+      { id: "1", text: "Great, I’ll be ready at that time.", role: "user", time: "09:15", seen: true },
+    ],
+  },
+  "HND Computer": {
+    subtitle: "Currently handling a new booking",
+    online: false,
+    quickReplies: ["I need help with pricing", "Can you check availability?", "Please cancel my order"],
+    initialMessages: [
+      { id: "2", text: "We received your request, but the booking was canceled before confirmation.", role: "agent", time: "07:30" },
+      { id: "1", text: "Understood, I’ll create a new booking later.", role: "user", time: "07:33", seen: false },
+    ],
+  },
+};
+
+const defaultPreset: ConversationPreset = {
+  subtitle: "Chat with support",
+  online: false,
+  quickReplies: ["Please update me", "I need help", "Thank you"],
+  initialMessages: [
+    { id: "2", text: "Hello, how can we help you today?", role: "agent", time: "08:44" },
+    { id: "1", text: "I have a question about my service booking.", role: "user", time: "08:46", seen: false },
+  ],
+};
 
 export default function ChatConversation() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ name?: string }>();
+  const params = useLocalSearchParams<{ id?: string; name?: string }>();
   const name = typeof params.name === "string" && params.name.length > 0 ? params.name : "Service Center";
+  const preset = conversationPresets[name] ?? defaultPreset;
   const insets = useSafeAreaInsets();
   const avatarSource = (() => {
     const key = Object.keys(storeImages).find((k) => k.toLowerCase().includes(String(name).toLowerCase()));
     return (storeImages as any)[name] || (key ? (storeImages as any)[key] : undefined) || require("../../../../assets/Google.jpg");
   })();
-  const [messages, setMessages] = useState<ConversationEntry[]>(initialMessages);
+  const [messages, setMessages] = useState<ConversationEntry[]>(preset.initialMessages);
   const [input, setInput] = useState("");
   const [showQuick, setShowQuick] = useState(true);
   const [isSeen, setIsSeen] = useState(false);
   const listRef = useRef<FlatList>(null);
 
-  const quickReplies = ["I'll wait", "How long will it take?", "No problem"];
+  const quickReplies = preset.quickReplies;
 
   const formatNow = () => {
     const now = new Date();
@@ -147,7 +190,7 @@ export default function ChatConversation() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-      <BackButtonHeader title={name} avatarSource={avatarSource} onBack={() => router.push({ pathname: "/user/chat" })} />
+      <BackButtonHeader title={name} online={preset.online} avatarSource={avatarSource} onBack={() => router.push({ pathname: "/user/chat" })} />
       <View style={styles.headerDivider} />
 
       <FlatList

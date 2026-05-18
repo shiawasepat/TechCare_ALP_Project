@@ -1,8 +1,7 @@
 import { Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
 import { useState, useEffect, useRef } from "react";
-import { useNavigation } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors as defaultColor } from "@/styles/colors";
 import BackButtonHeader from "@/components/BackButtonHeader";
 import { SaveBtn } from "@/components/btn/save-btn";
@@ -21,8 +20,7 @@ const serviceImageMap: Record<string, ImageSourcePropType> = {
 };
 
 export function details() {
-  const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
   const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string }>();
   const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "Mugen Computer Pettarani";
   const serviceAddress = typeof params.address === "string" && params.address.length > 0 ? params.address : "Jl. A. P. Pettarani No.89a, Makassar";
@@ -58,10 +56,7 @@ export function details() {
 
   return (
     <SafeAreaView style={styles.mainContainer} edges={["top", "left", "right"]}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
-        <BackBtn />
-        <Text style={styles.detailsText}>Details</Text>
-      </View>
+      <BackButtonHeader title="Details" onBack={() => router.back()} />
 
       <ScrollView style={styles.container}>
         {/* Image */}
@@ -150,7 +145,7 @@ export function details() {
           <Text>Selected Service</Text>
           <Text style={{ fontWeight: "bold" }}>{selectedService}</Text>
         </View>
-        <TouchableOpacity style={styles.chatButton} onPress={() => router.push('/user/chat')}>
+        <TouchableOpacity style={styles.chatButton} onPress={() => router.push("/user/chat") }>
           <Text style={styles.chatButtonText}>Chat</Text>
         </TouchableOpacity>
       </View>
