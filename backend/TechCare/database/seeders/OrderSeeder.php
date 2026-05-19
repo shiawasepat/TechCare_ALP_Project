@@ -52,6 +52,96 @@ class OrderSeeder extends Seeder
             'status_order'        => 'completed',
         ]);
 
+        // 6. Order 4: Home Service (Pending)
+        Order::create([
+            'id_service'          => $services[1]->id_service ?? $services->first()->id_service,
+            'id_user'             => $users[1]->id_user ?? $users->first()->id_user,
+            'tipe_order'          => 'home_service',
+            'waktu_reservasi'     => null,
+            'alamat_home_service' => 'Jl. Sudirman No. 123, Jakarta Pusat',
+            'status_order'        => 'pending',
+        ]);
+
+        // 7. Order 5: On-site Reservation (In Progress)
+        Order::create([
+            'id_service'          => $services[2]->id_service ?? $services->last()->id_service,
+            'id_user'             => $users->last()->id_user,
+            'tipe_order'          => 'reservasi',
+            'waktu_reservasi'     => Carbon::now()->addDays(1)->setTime(15, 0, 0),
+            'alamat_home_service' => null,
+            'status_order'        => 'in_progress',
+        ]);
+
+        // 8. Order 6: Home Service (Completed)
+        Order::create([
+            'id_service'          => $services->first()->id_service,
+            'id_user'             => $users[2]->id_user ?? $users->first()->id_user,
+            'tipe_order'          => 'home_service',
+            'waktu_reservasi'     => null,
+            'alamat_home_service' => 'Jl. Fatmawati No. 56, Jakarta Selatan',
+            'status_order'        => 'completed',
+        ]);
+
+        // 9. Order 7: On-site Reservation (Pending)
+        Order::create([
+            'id_service'          => $services->last()->id_service,
+            'id_user'             => $users[1]->id_user ?? $users->first()->id_user,
+            'tipe_order'          => 'reservasi',
+            'waktu_reservasi'     => Carbon::now()->addDays(3)->setTime(11, 30, 0),
+            'alamat_home_service' => null,
+            'status_order'        => 'pending',
+        ]);
+
+        // 10. Order 8: Home Service (In Progress)
+        Order::create([
+            'id_service'          => $services[1]->id_service ?? $services->first()->id_service,
+            'id_user'             => $users->first()->id_user,
+            'tipe_order'          => 'home_service',
+            'waktu_reservasi'     => null,
+            'alamat_home_service' => 'Jl. Blok M No. 78, Jakarta Selatan',
+            'status_order'        => 'in_progress',
+        ]);
+
+        // 11. Order 9: On-site Reservation (Completed)
+        Order::create([
+            'id_service'          => $services->first()->id_service,
+            'id_user'             => $users->last()->id_user,
+            'tipe_order'          => 'reservasi',
+            'waktu_reservasi'     => Carbon::now()->subDays(2)->setTime(9, 0, 0),
+            'alamat_home_service' => null,
+            'status_order'        => 'completed',
+        ]);
+
+        // 12. Order 10: Home Service (Pending)
+        Order::create([
+            'id_service'          => $services->last()->id_service,
+            'id_user'             => $users[2]->id_user ?? $users->first()->id_user,
+            'tipe_order'          => 'home_service',
+            'waktu_reservasi'     => null,
+            'alamat_home_service' => 'Jl. Gatot Subroto No. 99, Jakarta Selatan',
+            'status_order'        => 'pending',
+        ]);
+
+        // 13. Order 11: On-site Reservation (In Progress)
+        Order::create([
+            'id_service'          => $services[2]->id_service ?? $services->first()->id_service,
+            'id_user'             => $users[1]->id_user ?? $users->first()->id_user,
+            'tipe_order'          => 'reservasi',
+            'waktu_reservasi'     => Carbon::now()->addDays(1)->setTime(16, 45, 0),
+            'alamat_home_service' => null,
+            'status_order'        => 'in_progress',
+        ]);
+
+        // 14. Order 12: Home Service (Completed)
+        Order::create([
+            'id_service'          => $services->first()->id_service,
+            'id_user'             => $users->first()->id_user,
+            'tipe_order'          => 'home_service',
+            'waktu_reservasi'     => null,
+            'alamat_home_service' => 'Jl. Menteng No. 34, Jakarta Pusat',
+            'status_order'        => 'completed',
+        ]);
+
         $this->command->info('✅ Orders with Type Options seeded successfully!');
     }
 }
