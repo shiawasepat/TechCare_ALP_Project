@@ -88,26 +88,39 @@ export function dashboard() {
     const getServiceCenterData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("http://127.0.0.1:8000/api/service_centers", {
+        console.log("Fetching from ngrok...");
+
+        const response = await fetch("https://herbal-ungodly-reformed.ngrok-free.dev/api/service_centers", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
           },
         });
+
+        console.log("Response status:", response.status);
+        const json = await response.json();
+        console.log("Raw response data:", JSON.stringify(json, null, 2));
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status} - ${JSON.stringify(json)}`);
         }
 
-        const json = await response.json();
-        console.log("Service Center Data:", json);
+        // Handle different possible response structures
+        const dataArray = json.service_centers || json.data || json;
+        console.log("Data to transform:", dataArray);
 
-        // Transform and validate data if needed
-        const transformed = (json.service_centers || []).map(transformServiceCenterData);
+        if (!Array.isArray(dataArray)) {
+          throw new Error("Response data is not an array");
+        }
+
+        const transformed = dataArray.map(transformServiceCenterData);
         setServiceCenters(transformed);
         setError(null);
       } catch (error) {
-        console.error("Error fetching service center data:", error);
-        setError(error instanceof Error ? error.message : "Failed to fetch service centers");
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("Error fetching service center data:", errorMessage);
+        setError(`Fetch Error: ${errorMessage}`);
       } finally {
         setIsLoading(false);
       }
@@ -255,7 +268,7 @@ export function dashboard() {
             <TextInput placeholder="Search service or store..." placeholderTextColor="#97A2B8" style={styles.searchInput} />
           </View>
 
-          <Pressable style={styles.profileButton} accessibilityRole="button">
+          <Pressable style={styles.profileButton} accessibilityRole="button" onPress={() => router.push("/user/profile")}>
             <Feather name="user" size={24} color="#111827" />
           </Pressable>
         </View>
