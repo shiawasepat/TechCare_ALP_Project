@@ -44,6 +44,7 @@ public function index()
             'name_service_center' => 'required|string|max:64',
             'deskripsi_service_center' => 'required|string|max:255',
             'lokasi_service_center' => 'required|string|max:255',
+            'jarak_service_center' => 'required|float|min:0',
             'status_service_center' => 'required|in:buka,tutup',
             'foto_service_center' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
 
@@ -82,6 +83,7 @@ public function index()
         $validated = $request->validate([
             'name_service_center' => 'sometimes|required|string|max:64',
             'deskripsi_service_center' => 'sometimes|required|string|max:255',
+            'jarak_service_center' => 'sometimes|required|float|min:0',
             'status_service_center' => 'sometimes|required|in:buka,tutup',
             'foto_service_center' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
