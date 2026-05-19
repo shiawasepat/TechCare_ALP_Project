@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -67,6 +68,34 @@ class UserController extends Controller
             'user' => $user
         ]);
     }
+
+    public function login(Request $request)
+{
+    // 1. Validate the incoming request data
+    $request->validate([
+        'email' => 'required|string|email',
+        'password' => 'required|string',
+    ]);
+
+    // 2. Find the user by their email
+    $user = User::where('email', $request->email)->first();
+
+    // 3. Check if user exists and the password matches the hashed password in DB
+    if (!$user || !Hash::check($request->password, $user->password)) {
+        return response()->json([
+            'message' => 'Bad credentials. Check your email or password again.'
+        ], 401);
+    }
+
+    // 4. Create a fresh Sanctum token for this login session
+    $token = $user->createToken('react_native_app')->plainTextToken;
+
+    return response()->json([
+        'message' => 'Login successful!',
+        'user' => $user,
+        'token' => $token
+    ], 200);
+}
 
     /**
      * Remove the specified resource from storage.

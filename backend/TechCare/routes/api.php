@@ -21,9 +21,13 @@ Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/services/{service}', [ServiceController::class, 'show']);
 Route::get('/ratings', [RatingController::class, 'index']);
 
+
+// Midtrans Webhook to acces
+Route::post('/midtrans/callback', [PaymentController::class, 'handleNotification']);
+
 //register thingy magic
 Route::post('/users', [UserController::class, 'store']);
-Route::post('/mitras', [MitraController::class, 'store']);
+Route::post('/mitras', [MitraController::class, 'store']); // not used for frontend.
 
 //login
 Route::post('/login', [AuthController::class, 'login']); 
@@ -37,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/payments/mock', [PaymentController::class, 'simulatePayment']);
+    Route::post('/payment/snap-token', [PaymentController::class, 'getSnapToken']);
 
     //Chats
     Route::get('/orders/{order}/chat', [ChatsController::class, 'show']);
