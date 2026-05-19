@@ -28,6 +28,7 @@ class Service_Center extends Model
         'name_service_center',
         'deskripsi_service_center',
         'lokasi_service_center',
+        'jarak_service_center',
         'status_service_center',
         'foto_service_center',
 

@@ -6,634 +6,647 @@ import { Feather, FontAwesome6 } from "@expo/vector-icons";
 import { colors as defaultColor } from "@/styles/colors";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { LinearGradient } from "expo-linear-gradient";
-// expo LinearGradient typing sometimes conflicts with TSX; use alias to satisfy JSX typing
 const LGradient: any = LinearGradient;
 import { getCurrentUserLocation } from "@/utils/location";
 
 type FilterKey = "Nearest" | "Top Rated" | "Open Now" | "Filter";
 
 type ServiceCenter = {
-	name: string;
-	rating: number;
-	reviews: number;
-	status: string;
-	closesAt: string;
-	distance: string;
-	address: string;
-	latitude: number;
-	longitude: number;
-	image: ImageSourcePropType;
+  name: string;
+  rating: number;
+  reviews: number;
+  status: string;
+  closesAt: string;
+  distance: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  image: ImageSourcePropType;
 };
 
 type PromoSlide = {
-	title: string;
-	subtitle: string;
-	image: ImageSourcePropType;
-	backgroundColor: string;
+  title: string;
+  subtitle: string;
+  image: ImageSourcePropType;
+  backgroundColor: string;
 };
-
-const serviceCenters: ServiceCenter[] = [
-	{
-		name: "Mugen Computer Pettarani",
-		rating: 4.5,
-		reviews: 128,
-		status: "Open",
-		closesAt: "09.00 pm",
-		distance: "5.1 km",
-		address: "Jl. A. P. Pettarani No.89a",
-		latitude: -5.15677,
-		longitude: 119.43288,
-		image: require("../../../assets/images/sv_ct/Mugen Computer Pettarani.jpg"),
-	},
-	{
-		name: "Mugen Computer Tanjung Bunga",
-		rating: 5,
-		reviews: 96,
-		status: "Open",
-		closesAt: "09.00 pm",
-		distance: "2.8 km",
-		address: "Jl. Metro Tanjung Bunga No.30-31",
-		latitude: -5.16844,
-		longitude: 119.40462,
-		image: require("../../../assets/images/sv_ct/Mugen Computer Tanjung Bunga .jpg"),
-	},
-	{
-		name: "Elextra Komputer",
-		rating: 5,
-		reviews: 87,
-		status: "Open",
-		closesAt: "06.00 pm",
-		distance: "5.1 km",
-		address: "Jl. A.P. Pettarani Ruko Diamond No. 3",
-		latitude: -5.15735,
-		longitude: 119.43224,
-		image: require("../../../assets/images/sv_ct/Elextra Komputer.jpg"),
-	},
-	{
-		name: "HND Computer",
-		rating: 5,
-		reviews: 143,
-		status: "Open",
-		closesAt: "09.00 pm",
-		distance: "5.1 km",
-		address: "Jalan Ince Nurdin No.1AB",
-		latitude: -5.15138,
-		longitude: 119.42735,
-		image: require("../../../assets/images/sv_ct/HND Computer Ince Nurdin.jpg"),
-	},
-	{
-		name: "HND Computer Pengayoman",
-		rating: 5,
-		reviews: 112,
-		status: "Open",
-		closesAt: "08.00 pm",
-		distance: "5.1 km",
-		address: "Jl. Pengayoman No.G 05",
-		latitude: -5.14725,
-		longitude: 119.45226,
-		image: require("../../../assets/images/sv_ct/HND Computer Pengayoman.jpg"),
-	},
-];
 
 const filters: FilterKey[] = ["Nearest", "Top Rated", "Open Now"];
 
 const promoSlides: PromoSlide[] = [
-	{
-		title: "20% off for your first service!",
-		subtitle: "Get reliable service with great quality.",
-		image: require("../../../assets/special_offer.jpg"),
-		backgroundColor: "#DDEBFF",
-	},
-	{
-		title: "Free consultation",
-		subtitle: "Chat with our team before you book.",
-		image: require("../../../assets/special_offer.jpg"),
-		backgroundColor: "#EAF4FF",
-	},
-	{
-		title: "Fast repair promo",
-		subtitle: "Best prices for screen and battery service.",
-		image: require("../../../assets/special_offer.jpg"),
-		backgroundColor: "#E5F0FF",
-	},
+  {
+    title: "20% off for your first service!",
+    subtitle: "Get reliable service with great quality.",
+    image: require("../../../assets/special_offer.jpg"),
+    backgroundColor: "#DDEBFF",
+  },
+  {
+    title: "Free consultation",
+    subtitle: "Chat with our team before you book.",
+    image: require("../../../assets/special_offer.jpg"),
+    backgroundColor: "#EAF4FF",
+  },
+  {
+    title: "Fast repair promo",
+    subtitle: "Best prices for screen and battery service.",
+    image: require("../../../assets/special_offer.jpg"),
+    backgroundColor: "#E5F0FF",
+  },
 ];
 
 export function dashboard() {
-	const [activeFilter, setActiveFilter] = useState<FilterKey>("Nearest");
-	const [activePromoIndex, setActivePromoIndex] = useState(0);
-	const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [serviceCenters, setServiceCenters] = useState<ServiceCenter[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("Nearest");
+  const [activePromoIndex, setActivePromoIndex] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const transformServiceCenterData = (data: any): ServiceCenter => {
+    return {
+      name: data.name_service_center,
+      rating: data.ratings_avg_nilai_rating || 0,
+      reviews: data.ratings_count || 0,
+      status: data.status_service_center === "buka" ? "Open" : "Closed",
+      closesAt: data.closesAt || "5.00 pm",
+      distance: `${data.jarak_service_center} km`,
+      address: data.lokasi_service_center,
+      latitude: data.latitude || 0,
+      longitude: data.longitude || 0,
+      image: getServiceCenterImage(data.name_service_center),
+    };
+  };
 
-	const panResponder = useRef(
-		PanResponder.create({
-			onStartShouldSetPanResponder: () => true,
-			onMoveShouldSetPanResponder: () => true,
-			onPanResponderRelease: (evt, gestureState) => {
-				const { dx } = gestureState;
-				if (dx > 50) {
-					// Swipe right - go to previous slide
-					setActivePromoIndex((current) => (current - 1 + promoSlides.length) % promoSlides.length);
-				} else if (dx < -50) {
-					// Swipe left - go to next slide
-					setActivePromoIndex((current) => (current + 1) % promoSlides.length);
-				}
-			},
-		})
-	).current;
+  const serviceCenterImages: Record<string, ImageSourcePropType> = {
+    "TechCare Hub Jakarta": require("../../../assets/images/sv_ct/placeholder.jpg"),
+    "FixIt Gadget Studio": require("../../../assets/images/sv_ct/placeholder.jpg"),
+    "Doctor Gadget Surabaya": require("../../../assets/images/sv_ct/placeholder.jpg"),
+  };
+  const getServiceCenterImage = (name: string): ImageSourcePropType => {
+    return serviceCenterImages[name] || require("../../../assets/images/sv_ct/placeholder.jpg");
+  };
+  useEffect(() => {
+    const getServiceCenterData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("http://127.0.0.1:8000/api/service_centers", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-	const activePromo = promoSlides[activePromoIndex];
+        const json = await response.json();
+        console.log("Service Center Data:", json);
 
-	useEffect(() => {
-		let mounted = true;
+        // Transform and validate data if needed
+        const transformed = (json.service_centers || []).map(transformServiceCenterData);
+        setServiceCenters(transformed);
+        setError(null);
+      } catch (error) {
+        console.error("Error fetching service center data:", error);
+        setError(error instanceof Error ? error.message : "Failed to fetch service centers");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-		const loadUserLocation = async () => {
-			const currentLocation = await getCurrentUserLocation();
-			if (mounted && currentLocation) {
-				setUserLocation(currentLocation);
-			}
-		};
+    getServiceCenterData();
+  }, []);
 
-		loadUserLocation();
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderRelease: (evt, gestureState) => {
+        const { dx } = gestureState;
+        if (dx > 50) {
+          // Swipe right - go to previous slide
+          setActivePromoIndex((current) => (current - 1 + promoSlides.length) % promoSlides.length);
+        } else if (dx < -50) {
+          // Swipe left - go to next slide
+          setActivePromoIndex((current) => (current + 1) % promoSlides.length);
+        }
+      },
+    }),
+  ).current;
 
-		return () => {
-			mounted = false;
-		};
-	}, []);
+  const activePromo = promoSlides[activePromoIndex];
 
-	const parseDistanceKm = (distance: string) => Number.parseFloat(distance.replace(" km", ""));
+  useEffect(() => {
+    let mounted = true;
 
-	const parseMeridiemTime = (time: string) => {
-		const normalized = time.trim().toLowerCase();
-		const [hourMinutePart, meridiem] = normalized.split(" ");
-		if (!hourMinutePart || !meridiem) {
-			return null;
-		}
+    const loadUserLocation = async () => {
+      const currentLocation = await getCurrentUserLocation();
+      if (mounted && currentLocation) {
+        setUserLocation(currentLocation);
+      }
+    };
 
-		const [hourPart, minutePart = "0"] = hourMinutePart.split(".");
-		const hourNumber = Number.parseInt(hourPart, 10);
-		const minuteNumber = Number.parseInt(minutePart, 10);
-		if (Number.isNaN(hourNumber) || Number.isNaN(minuteNumber)) {
-			return null;
-		}
+    loadUserLocation();
 
-		let parsedHour = hourNumber;
-		if (meridiem === "pm" && parsedHour < 12) {
-			parsedHour += 12;
-		}
-		if (meridiem === "am" && parsedHour === 12) {
-			parsedHour = 0;
-		}
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-		return parsedHour * 60 + minuteNumber;
-	};
+  const parseDistanceKm = (distance: string) => Number.parseFloat(distance.replace(" km", ""));
 
-	const isOpenNow = (center: ServiceCenter) => {
-		const openAtMinutes = 9 * 60;
-		const closeAtMinutes = parseMeridiemTime(center.closesAt);
-		if (closeAtMinutes === null) {
-			return center.status === "Open";
-		}
+  const parseMeridiemTime = (time: string) => {
+    const normalized = time.trim().toLowerCase();
+    const [hourMinutePart, meridiem] = normalized.split(" ");
+    if (!hourMinutePart || !meridiem) {
+      return null;
+    }
 
-		const now = new Date();
-		const nowMinutes = now.getHours() * 60 + now.getMinutes();
-		return center.status === "Open" && nowMinutes >= openAtMinutes && nowMinutes <= closeAtMinutes;
-	};
+    const [hourPart, minutePart = "0"] = hourMinutePart.split(".");
+    const hourNumber = Number.parseInt(hourPart, 10);
+    const minuteNumber = Number.parseInt(minutePart, 10);
+    if (Number.isNaN(hourNumber) || Number.isNaN(minuteNumber)) {
+      return null;
+    }
 
-	const getDistanceKm = (center: ServiceCenter) => {
-		if (!userLocation) {
-			return parseDistanceKm(center.distance);
-		}
+    let parsedHour = hourNumber;
+    if (meridiem === "pm" && parsedHour < 12) {
+      parsedHour += 12;
+    }
+    if (meridiem === "am" && parsedHour === 12) {
+      parsedHour = 0;
+    }
 
-		const toRadians = (value: number) => (value * Math.PI) / 180;
-		const earthRadiusKm = 6371;
-		const latitudeDistance = toRadians(center.latitude - userLocation.latitude);
-		const longitudeDistance = toRadians(center.longitude - userLocation.longitude);
+    return parsedHour * 60 + minuteNumber;
+  };
 
-		const a =
-			Math.sin(latitudeDistance / 2) * Math.sin(latitudeDistance / 2) +
-			Math.cos(toRadians(userLocation.latitude)) *
-				Math.cos(toRadians(center.latitude)) *
-				Math.sin(longitudeDistance / 2) *
-				Math.sin(longitudeDistance / 2);
+  const isOpenNow = (center: ServiceCenter) => {
+    const openAtMinutes = 9 * 60;
+    const closeAtMinutes = parseMeridiemTime(center.closesAt);
+    if (closeAtMinutes === null) {
+      return center.status === "Open";
+    }
 
-		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		return earthRadiusKm * c;
-	};
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    return center.status === "Open" && nowMinutes >= openAtMinutes && nowMinutes <= closeAtMinutes;
+  };
 
-	const centersWithDistance = useMemo(() => {
-		return serviceCenters.map((center) => {
-			const computedDistanceKm = getDistanceKm(center);
+  const getDistanceKm = (center: ServiceCenter) => {
+    if (!userLocation) {
+      return parseDistanceKm(center.distance);
+    }
 
-			return {
-				...center,
-				computedDistanceKm,
-				computedDistanceLabel: `${computedDistanceKm.toFixed(1)} km`,
-			};
-		});
-	}, [userLocation]);
+    const toRadians = (value: number) => (value * Math.PI) / 180;
+    const earthRadiusKm = 6371;
+    const latitudeDistance = toRadians(center.latitude - userLocation.latitude);
+    const longitudeDistance = toRadians(center.longitude - userLocation.longitude);
 
-	const visibleServiceCenters = useMemo(() => {
-		if (activeFilter === "Top Rated") {
-			return [...centersWithDistance].sort((left, right) => {
-				if (right.rating !== left.rating) {
-					return right.rating - left.rating;
-				}
-				return right.reviews - left.reviews;
-			});
-		}
+    const a = Math.sin(latitudeDistance / 2) * Math.sin(latitudeDistance / 2) + Math.cos(toRadians(userLocation.latitude)) * Math.cos(toRadians(center.latitude)) * Math.sin(longitudeDistance / 2) * Math.sin(longitudeDistance / 2);
 
-		if (activeFilter === "Open Now") {
-			return centersWithDistance.filter((center) => isOpenNow(center));
-		}
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadiusKm * c;
+  };
 
-		if (activeFilter === "Nearest") {
-			return [...centersWithDistance].sort((left, right) => {
-				if (left.computedDistanceKm !== right.computedDistanceKm) {
-					return left.computedDistanceKm - right.computedDistanceKm;
-				}
-				return left.name.localeCompare(right.name);
-			});
-		}
+  const centersWithDistance = useMemo(() => {
+    return serviceCenters.map((center) => {
+      const computedDistanceKm = getDistanceKm(center);
 
-		return centersWithDistance;
-	}, [activeFilter, centersWithDistance]);
+      return {
+        ...center,
+        computedDistanceKm,
+        computedDistanceLabel: `${computedDistanceKm.toFixed(1)} km`,
+      };
+    });
+  }, [serviceCenters, userLocation]);
 
-	return (
-		<SafeAreaView style={styles.safeArea} edges={["top", "bottom", "left", "right"]}>
-			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-				<View style={styles.topRow}>
-					<View style={styles.searchContainer}>
-						<Feather name="search" size={26} color={defaultColor.primary.backgroundColor} />
-						<TextInput placeholder="Search service or store..." placeholderTextColor="#97A2B8" style={styles.searchInput} />
-					</View>
+  const visibleServiceCenters = useMemo(() => {
+    if (activeFilter === "Top Rated") {
+      return [...centersWithDistance].sort((left, right) => {
+        if (right.rating !== left.rating) {
+          return right.rating - left.rating;
+        }
+        return right.reviews - left.reviews;
+      });
+    }
 
-					<Pressable style={styles.profileButton} accessibilityRole="button">
-					<Feather name="user" size={24} color="#111827" />
-					</Pressable>
-				</View>
+    if (activeFilter === "Open Now") {
+      return centersWithDistance.filter((center) => isOpenNow(center));
+    }
 
-						<View style={styles.offerCard} {...panResponder.panHandlers}>
-							{/* Use expo-linear-gradient so the gradient follows the View's borderRadius exactly */}
-							<LGradient
-								colors={["#DCEBFF", "#EEF5FF", "#EAF3FF"]}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 0 }}
-								style={styles.offerGradient}
-								pointerEvents="none"
-							/>
-				<View style={styles.offerTextBlock}>
-					<Text style={styles.offerTitle}>{activePromo.title}</Text>
-					<Text style={styles.offerSubtitle}>{activePromo.subtitle}</Text>
-				</View>
+    if (activeFilter === "Nearest") {
+      return [...centersWithDistance].sort((left, right) => {
+        if (left.computedDistanceKm !== right.computedDistanceKm) {
+          return left.computedDistanceKm - right.computedDistanceKm;
+        }
+        return left.name.localeCompare(right.name);
+      });
+    }
 
-				<Image source={activePromo.image} style={styles.offerImage} resizeMode="contain" />
-				</View>
+    return centersWithDistance;
+  }, [activeFilter, centersWithDistance]);
 
-				<View style={styles.paginationRow}>
-					{promoSlides.map((_, index) => (
-					<View
-						key={`promo-dot-${index}`}
-						style={[styles.paginationDot, index === activePromoIndex && styles.paginationDotActive]}
-					/>
-				))}
-			</View>
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom", "left", "right"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.topRow}>
+          <View style={styles.searchContainer}>
+            <Feather name="search" size={26} color={defaultColor.primary.backgroundColor} />
+            <TextInput placeholder="Search service or store..." placeholderTextColor="#97A2B8" style={styles.searchInput} />
+          </View>
 
-			<View style={styles.sectionHeader}>
-				<Text style={styles.sectionTitle}>Recommended For You</Text>
-			</View>
-				<View style={styles.filterRow}>
-					{filters.map((filter) => {
-						const isActive = filter === activeFilter;
+          <Pressable style={styles.profileButton} accessibilityRole="button">
+            <Feather name="user" size={24} color="#111827" />
+          </Pressable>
+        </View>
 
-						return (
-							<Pressable key={filter} style={[styles.filterChip, isActive && styles.filterChipActive]} onPress={() => setActiveFilter(filter)}>
-								{filter === "Nearest" ? (
-									<FontAwesome6 name="location-dot" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
-								) : filter === "Top Rated" ? (
-									<Feather name="star" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
-								) : filter === "Open Now" ? (
-									<Feather name="clock" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
-								) : (
-									<Feather name="sliders" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
-								)}
-								<Text style={[styles.filterText, isActive && styles.filterTextActive]}>{filter}</Text>
-							</Pressable>
-						);
-					})}
-				</View>
+        <View style={styles.offerCard} {...panResponder.panHandlers}>
+          {/* Use expo-linear-gradient so the gradient follows the View's borderRadius exactly */}
+          <LGradient colors={["#DCEBFF", "#EEF5FF", "#EAF3FF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.offerGradient} pointerEvents="none" />
+          <View style={styles.offerTextBlock}>
+            <Text style={styles.offerTitle}>{activePromo.title}</Text>
+            <Text style={styles.offerSubtitle}>{activePromo.subtitle}</Text>
+          </View>
 
-				<View style={styles.cardsContainer}>
-					{visibleServiceCenters.map((serviceCenter) => {
-						const distanceLabel = serviceCenter.computedDistanceLabel;
+          <Image source={activePromo.image} style={styles.offerImage} resizeMode="contain" />
+        </View>
 
-						return (
-						<Pressable
-							key={serviceCenter.name}
-							style={styles.serviceCard}
-							onPress={() =>
-								router.push({
-									pathname: "/user/details",
-									params: {
-										name: serviceCenter.name,
-										rating: serviceCenter.rating.toString(),
-										closesAt: serviceCenter.closesAt,
-										address: serviceCenter.address,
-										distance: distanceLabel,
-									},
-								})
-							}
-						>
-							<Image source={serviceCenter.image} style={styles.serviceImage} resizeMode="cover" />
+        <View style={styles.paginationRow}>
+          {promoSlides.map((_, index) => (
+            <View key={`promo-dot-${index}`} style={[styles.paginationDot, index === activePromoIndex && styles.paginationDotActive]} />
+          ))}
+        </View>
 
-							<View style={styles.serviceInfo}>
-								<Text style={styles.serviceTitle} numberOfLines={2}>
-									{serviceCenter.name}
-								</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recommended For You</Text>
+        </View>
+        <View style={styles.filterRow}>
+          {filters.map((filter) => {
+            const isActive = filter === activeFilter;
 
-								<View style={styles.ratingStatusRow}>
-									<Feather name="star" size={15} color="#FBBF24" />
-									<Text style={styles.ratingText}>{serviceCenter.rating.toFixed(1)}</Text>
-									<Text style={styles.separatorText}>·</Text>
-									<Text style={styles.statusText}>{serviceCenter.status}</Text>
-									<Text style={styles.separatorText}>·</Text>
-									<Text style={styles.closesText}>Closes {serviceCenter.closesAt}</Text>
-								</View>
+            return (
+              <Pressable key={filter} style={[styles.filterChip, isActive && styles.filterChipActive]} onPress={() => setActiveFilter(filter)}>
+                {filter === "Nearest" ? (
+                  <FontAwesome6 name="location-dot" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
+                ) : filter === "Top Rated" ? (
+                  <Feather name="star" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
+                ) : filter === "Open Now" ? (
+                  <Feather name="clock" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
+                ) : (
+                  <Feather name="sliders" size={14} color={isActive ? defaultColor.primary.backgroundColor : "#1F2937"} />
+                )}
+                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{filter}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-								<View style={styles.addressRow}>
-									<Feather name="map-pin" size={13} color="#6B7280" />
-									<Text style={styles.addressText} numberOfLines={1}>
-										{serviceCenter.address}
-									</Text>
-								</View>
-							</View>
+        <View style={styles.cardsContainer}>
+          {isLoading ? (
+            <View style={styles.centerMessage}>
+              <Text style={styles.loadingText}>Loading service centers...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.centerMessage}>
+              <Text style={styles.errorText}>⚠️ {error}</Text>
+            </View>
+          ) : visibleServiceCenters.length === 0 ? (
+            <View style={styles.centerMessage}>
+              <Text style={styles.emptyText}>No service centers found</Text>
+            </View>
+          ) : (
+            visibleServiceCenters.map((serviceCenter) => {
+              const distanceLabel = serviceCenter.computedDistanceLabel;
 
-							<View style={styles.distanceContainer}>
-								<Feather name="map-pin" size={18} color={defaultColor.primary.backgroundColor} />
-								<Text style={styles.distanceValue}>{distanceLabel}</Text>
-							</View>
-						</Pressable>
-						);
-					})}
-				</View>
-			</ScrollView>
+              return (
+                <Pressable
+                  key={serviceCenter.name}
+                  style={styles.serviceCard}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/user/details",
+                      params: {
+                        name: serviceCenter.name,
+                        rating: serviceCenter.rating.toString(),
+                        closesAt: serviceCenter.closesAt,
+                        address: serviceCenter.address,
+                        distance: distanceLabel,
+                      },
+                    })
+                  }
+                >
+                  <Image source={serviceCenter.image} style={styles.serviceImage} resizeMode="cover" />
 
-			<BottomNavigation />
-		</SafeAreaView>
-	);
+                  <View style={styles.serviceInfo}>
+                    <Text style={styles.serviceTitle} numberOfLines={2}>
+                      {serviceCenter.name}
+                    </Text>
+
+                    <View style={styles.ratingStatusRow}>
+                      <Feather name="star" size={15} color="#FBBF24" />
+                      <Text style={styles.ratingText}>{serviceCenter.rating.toFixed(1)}</Text>
+                      <Text style={styles.separatorText}>·</Text>
+                      <Text style={styles.statusText}>{serviceCenter.status}</Text>
+                      <Text style={styles.separatorText}>·</Text>
+                      <Text style={styles.closesText}>Closes {serviceCenter.closesAt}</Text>
+                    </View>
+
+                    <View style={styles.addressRow}>
+                      <Feather name="map-pin" size={13} color="#6B7280" />
+                      <Text style={styles.addressText} numberOfLines={1}>
+                        {serviceCenter.address}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.distanceContainer}>
+                    <Feather name="map-pin" size={18} color={defaultColor.primary.backgroundColor} />
+                    <Text style={styles.distanceValue}>{distanceLabel}</Text>
+                  </View>
+                </Pressable>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+
+      <BottomNavigation />
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-	safeArea: {
-		flex: 1,
-		backgroundColor: "#F6F9FF",
-	},
-	content: {
-		paddingHorizontal: 20,
-		paddingTop: 16,
-		paddingBottom: 120,
-	},
-	topRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-		marginBottom: 16,
-	},
-	searchContainer: {
-		flex: 1,
-		flexDirection: "row",
-		alignItems: "center",
-		backgroundColor: "#FFFFFF",
-		borderRadius: 24,
-		borderWidth: 1.2,
-		borderColor: "#E5E7EB",
-		paddingHorizontal: 14,
-		height: 54,
-		shadowColor: "#D1D5DB",
-		shadowOpacity: 0.12,
-		shadowRadius: 8,
-		shadowOffset: { width: 0, height: 2 },
-		elevation: 1,
-	},
-	searchInput: {
-		flex: 1,
-		marginLeft: 10,
-		fontSize: 13,
-		color: "#111827",
-		fontWeight: "500",
-	},
-	profileButton: {
-		width: 54,
-		height: 54,
-		borderRadius: 27,
-		borderWidth: 1.2,
-		borderColor: "#E5E7EB",
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: "#FFFFFF",
-		shadowColor: "#D1D5DB",
-		shadowOpacity: 0.12,
-		shadowRadius: 8,
-		shadowOffset: { width: 0, height: 2 },
-		elevation: 1,
-	},
-	offerCard: {
-		borderRadius: 28,
-		aspectRatio: 2.75,
-		minHeight: 128,
-		maxHeight: 152,
-		overflow: "hidden",
-		paddingHorizontal: 16,
-		paddingVertical: 12,
-		marginBottom: 16,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		position: "relative",
-	},
-		offerTextBlock: {
-		flex: 1,
-		paddingRight: 8,
-		paddingLeft: 8,
-		justifyContent: "center",
-		paddingTop: 0,
-		maxWidth: "50%",
-		zIndex: 2,
-	},
-	offerTitle: {
-		fontSize: 17,
-		lineHeight: 22,
-		fontWeight: "800",
-		color: "#0F172A",
-		letterSpacing: -0.5,
-		marginBottom: 5,
-	},
-	offerSubtitle: {
-		fontSize: 11.5,
-		lineHeight: 16,
-		fontWeight: "500",
-		color: "#64748B",
-	},
-		offerImage: {
-		width: "48%",
-		height: "95%",
-		position: "absolute",
-		right: 8,
-		top: 4,
-		zIndex: 3,
-	},
-	offerGradient: {
-		position: "absolute",
-		left: 0,
-		top: 0,
-		right: 0,
-		bottom: 0,
-		borderRadius: 28,
-	},
-	paginationRow: {
-		flexDirection: "row",
-		justifyContent: "center",
-		alignItems: "center",
-		gap: 9,
-		marginBottom: 20,
-	},
-	paginationDot: {
-		width: 6,
-		height: 6,
-		borderRadius: 3,
-		backgroundColor: "#CBD5E0",
-	},
-	paginationDotActive: {
-		backgroundColor: "#2D6BFF",
-		transform: [{ scale: 1.12 }],
-	},
-	sectionHeader: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "flex-start",
-		marginBottom: 15,
-	},
-	sectionTitle: {
-		fontSize: 18,
-		fontWeight: "700",
-		color: "#1F2937",
-	},
-	filterRow: {
-		flexDirection: "row",
-		gap: 6,
-		marginBottom: 16,
-		flexWrap: "nowrap",
-	},
-	filterChip: {
-		flex: 1,
-		paddingHorizontal: 6,
-		height: 40,
-		borderRadius: 12,
-		backgroundColor: "#FFFFFF",
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 5,
-		shadowColor: "#D1D9E8",
-		shadowOpacity: 0.18,
-		shadowRadius: 8,
-		shadowOffset: { width: 0, height: 2 },
-		elevation: 2,
-		borderWidth: 1,
-		borderColor: "#E2E8F0",
-	},
-	filterChipActive: {
-		borderColor: "#3B82F6",
-		backgroundColor: "#EFF6FF",
-	},
-	filterText: {
-		fontSize: 11,
-		fontWeight: "700",
-		color: "#64748B",
-	},
-	filterTextActive: {
-		color: "#3B82F6",
-	},
-	cardsContainer: {
-		gap: 14,
-	},
-	serviceCard: {
-		flexDirection: "row",
-		alignItems: "flex-start",
-		backgroundColor: "#FFFFFF",
-		borderRadius: 13,
-		paddingVertical: 10,
-		paddingHorizontal: 10,
-		shadowColor: "#E6EEF9",
-		shadowOpacity: 0.1,
-		shadowRadius: 7,
-		shadowOffset: { width: 0, height: 2 },
-		elevation: 1,
-	},
-	serviceImage: {
-		width: 84,
-		height: 84,
-		borderRadius: 9,
-		marginRight: 12,
-	},
-	serviceInfo: {
-		flex: 1,
-		paddingTop: 1,
-	},
-	serviceTitle: {
-		fontSize: 15.5,
-		fontWeight: "700",
-		color: "#0F172A",
-		marginBottom: 4,
-		lineHeight: 19,
-	},
-	ratingStatusRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 4,
-		marginBottom: 4,
-	},
-	ratingText: {
-		fontSize: 12.5,
-		fontWeight: "500",
-		color: "#374151",
-	},
-	statusText: {
-		fontSize: 12,
-		fontWeight: "500",
-		color: "#10B981",
-	},
-	separatorText: {
-		color: "#9CA3AF",
-		fontSize: 13,
-	},
-	closesText: {
-		color: "#6B7280",
-		fontSize: 12,
-		fontWeight: "400",
-	},
-	addressRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		marginTop: 2,
-	},
-	addressText: {
-		color: "#6B7280",
-		fontSize: 11,
-		fontWeight: "400",
-		flex: 1,
-	},
-	distanceContainer: {
-		alignItems: "center",
-		justifyContent: "flex-start",
-		marginLeft: 8,
-		paddingTop: 1,
-	},
-	distanceValue: {
-		color: "#2D6BFF",
-		fontSize: 12.5,
-		fontWeight: "500",
-	},
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F6F9FF",
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 120,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    borderWidth: 1.2,
+    borderColor: "#E5E7EB",
+    paddingHorizontal: 14,
+    height: 54,
+    shadowColor: "#D1D5DB",
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 13,
+    color: "#111827",
+    fontWeight: "500",
+  },
+  profileButton: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1.2,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#D1D5DB",
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  offerCard: {
+    borderRadius: 28,
+    aspectRatio: 2.75,
+    minHeight: 128,
+    maxHeight: 152,
+    overflow: "hidden",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    position: "relative",
+  },
+  offerTextBlock: {
+    flex: 1,
+    paddingRight: 8,
+    paddingLeft: 8,
+    justifyContent: "center",
+    paddingTop: 0,
+    maxWidth: "50%",
+    zIndex: 2,
+  },
+  offerTitle: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.5,
+    marginBottom: 5,
+  },
+  offerSubtitle: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: "500",
+    color: "#64748B",
+  },
+  offerImage: {
+    width: "48%",
+    height: "95%",
+    position: "absolute",
+    right: 8,
+    top: 4,
+    zIndex: 3,
+  },
+  offerGradient: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 28,
+  },
+  paginationRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 9,
+    marginBottom: 20,
+  },
+  paginationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#CBD5E0",
+  },
+  paginationDotActive: {
+    backgroundColor: "#2D6BFF",
+    transform: [{ scale: 1.12 }],
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  filterRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 16,
+    flexWrap: "nowrap",
+  },
+  filterChip: {
+    flex: 1,
+    paddingHorizontal: 6,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    shadowColor: "#D1D9E8",
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  filterChipActive: {
+    borderColor: "#3B82F6",
+    backgroundColor: "#EFF6FF",
+  },
+  filterText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+  },
+  filterTextActive: {
+    color: "#3B82F6",
+  },
+  cardsContainer: {
+    gap: 14,
+  },
+  centerMessage: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#64748B",
+  },
+  errorText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#EF4444",
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#94A3B8",
+  },
+  serviceCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 13,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    shadowColor: "#E6EEF9",
+    shadowOpacity: 0.1,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  serviceImage: {
+    width: 84,
+    height: 84,
+    borderRadius: 9,
+    marginRight: 12,
+  },
+  serviceInfo: {
+    flex: 1,
+    paddingTop: 1,
+  },
+  serviceTitle: {
+    fontSize: 15.5,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 4,
+    lineHeight: 19,
+  },
+  ratingStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  ratingText: {
+    fontSize: 12.5,
+    fontWeight: "500",
+    color: "#374151",
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#10B981",
+  },
+  separatorText: {
+    color: "#9CA3AF",
+    fontSize: 13,
+  },
+  closesText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "400",
+  },
+  addressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 2,
+  },
+  addressText: {
+    color: "#6B7280",
+    fontSize: 11,
+    fontWeight: "400",
+    flex: 1,
+  },
+  distanceContainer: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginLeft: 8,
+    paddingTop: 1,
+  },
+  distanceValue: {
+    color: "#2D6BFF",
+    fontSize: 12.5,
+    fontWeight: "500",
+  },
 });
 
 export default dashboard;
