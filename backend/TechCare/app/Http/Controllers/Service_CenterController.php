@@ -78,8 +78,18 @@ public function index()
     /**
      * Update the specified resource in storage.
      */
+/**
+     * Update the specified resource in storage.
+     */
     public function update(Request $request, Service_Center $service_center)
     {
+        // SECURITY CHECK: Does this Mitra own this Service Center?
+        if ($service_center->id_mitra !== $request->user()->id_mitra) {
+            return response()->json([
+                'message' => 'Forbidden. You cannot modify a service center that does not belong to you.'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name_service_center' => 'sometimes|required|string|max:64',
             'deskripsi_service_center' => 'sometimes|required|string|max:255',
