@@ -1,9 +1,10 @@
 import { Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
 import { useState, useEffect, useRef } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { router, useLocalSearchParams } from "expo-router";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors as defaultColor } from "@/styles/colors";
-import BackButtonHeader from "@/components/BackButtonHeader";
+import { BackBtn } from "@/components/btn/back-btn";
 import { SaveBtn } from "@/components/btn/save-btn";
 import { ShareBtn } from "@/components/btn/share-btn";
 import { StarIcon } from "@/components/svg/Star";
@@ -11,26 +12,53 @@ import { ServiceIcon } from "@/components/svg/Service";
 import { ClockIcon } from "@/components/svg/Clock";
 import { CheckIcon } from "@/components/svg/Check";
 
-const serviceImageMap: Record<string, ImageSourcePropType> = {
-  "Mugen Computer Pettarani": require("@/assets/images/sv_ct/Mugen Computer Pettarani.jpg"),
-  "Mugen Computer Tanjung Bunga": require("@/assets/images/sv_ct/Mugen Computer Tanjung Bunga .jpg"),
-  "Elextra Komputer": require("@/assets/images/sv_ct/Elextra Komputer.jpg"),
-  "HND Computer": require("@/assets/images/sv_ct/HND Computer Ince Nurdin.jpg"),
-  "HND Computer Pengayoman": require("@/assets/images/sv_ct/HND Computer Pengayoman.jpg"),
+type ServiceCenterDetails = {
+  name: string;
+  address: string;
+  rating: number;
+  ratingCount: number;
+  closesAt: string;
+  distance: string;
+  image: ImageSourcePropType;
 };
 
 export function details() {
-  const router = useRouter();
+  const getServiceCenterData = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/service_centers/{service_center}", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: 1 }), // Example payload, adjust as needed
+      });
+    } catch (error) {
+      console.error("Error fetching service center data:", error);
+    }
+  };
+
+  const [isLoading, setIsLoading] = useState(false);
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string }>();
   const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "Mugen Computer Pettarani";
   const serviceAddress = typeof params.address === "string" && params.address.length > 0 ? params.address : "Jl. A. P. Pettarani No.89a, Makassar";
   const serviceDistance = typeof params.distance === "string" && params.distance.length > 0 ? params.distance : "5.1 km";
   const serviceClosesAt = typeof params.closesAt === "string" && params.closesAt.length > 0 ? params.closesAt : "09.00 pm";
   const ratingValue = typeof params.rating === "string" ? Number(params.rating) : 4;
-  const detailImage = serviceImageMap[serviceName] ?? require("@/assets/images/sv_ct/Mugen Computer Pettarani.jpg");
   const [activeTab, setActiveTab] = useState("service");
   const [selectedService, setSelectedService] = useState<"Home Service" | "Scheduled Service">("Home Service");
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const transformDetailsData = (data: any) => {
+    return {
+      name: data.name_service_center,
+      address: data.address_service_center,
+      rating: data.ratings_ang_vilai_rating || 0,
+      ratingCount: data.ratings_count || 0,
+      closesAt: data.closes_at,
+      distance: `${data.distance} km`,
+      image: getServiceCenterImage(data.name_service_center), // Assuming you have a function to get the image based on the service center name
+    };
+  };
 
   const tabs = ["service", "reviews", "about"];
 
@@ -44,23 +72,52 @@ export function details() {
     // }
   };
 
+  const serviceCenterImages: Record<string, ImageSourcePropType> = {
+    "TechCare Hub Jakarta": require("../../../assets/images/sv_ct/placeholder.jpg"),
+    "FixIt Gadget Studio": require("../../../assets/images/sv_ct/placeholder.jpg"),
+    "Doctor Gadget Surabaya": require("../../../assets/images/sv_ct/placeholder.jpg"),
+  };
+
+  const getServiceCenterImage = (name: string): ImageSourcePropType => {
+    return serviceCenterImages[name] || require("../../../assets/images/sv_ct/placeholder.jpg");
+  };
+
   useEffect(() => {
-    const tabIndex = tabs.indexOf(activeTab);
-    Animated.timing(slideAnim, {
-      toValue: tabIndex,
-      duration: 200,
-      useNativeDriver: true,
-      easing: Easing.out(Easing.ease),
-    }).start();
-  }, [activeTab, slideAnim]);
+    const getServiceCenterData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("http://127.0.0.1:8000/api/service_centers/{id}", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const json = await response.json();
+        console.log("Service Center Data:", json);
+      } catch (error) {
+        console.error("Error fetching service center data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getServiceCenterData();
+  }, []);
 
   return (
     <SafeAreaView style={styles.mainContainer} edges={["top", "left", "right"]}>
-      <BackButtonHeader title="Details" onBack={() => router.back()} />
+      <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
+        <BackBtn />
+        <Text style={styles.detailsText}>Details</Text>
+      </View>
 
       <ScrollView style={styles.container}>
         {/* Image */}
-        <Image source={detailImage} style={styles.detailsImage} />
+        <Image source={getServiceCenterImage(serviceName)} style={styles.detailsImage} />
 
         {/* Title with Save/Share */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 15 }}>
@@ -145,7 +202,7 @@ export function details() {
           <Text>Selected Service</Text>
           <Text style={{ fontWeight: "bold" }}>{selectedService}</Text>
         </View>
-        <TouchableOpacity style={styles.chatButton} onPress={() => router.push("/user/chat") }>
+        <TouchableOpacity style={styles.chatButton} onPress={() => router.push("/user/chat")}>
           <Text style={styles.chatButtonText}>Chat</Text>
         </TouchableOpacity>
       </View>
