@@ -255,7 +255,7 @@ export function dashboard() {
             <TextInput placeholder="Search service or store..." placeholderTextColor="#97A2B8" style={styles.searchInput} />
           </View>
 
-          <Pressable style={styles.profileButton} accessibilityRole="button">
+          <Pressable onPress={() => navigation.navigate("/user/profile")} style={styles.profileButton} accessibilityRole="button">
             <Feather name="user" size={24} color="#111827" />
           </Pressable>
         </View>
