@@ -65,4 +65,21 @@ class AuthController extends Controller
             'mitra' => $mitra
         ]);
     }
+
+    public function me(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
+    public function logout(Request $request)
+    {
+        $token = $request->user()?->currentAccessToken();
+        if ($token) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'message' => 'Logged out successfully'
+        ], 200);
+    }
 }

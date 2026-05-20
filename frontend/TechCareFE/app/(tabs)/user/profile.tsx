@@ -6,16 +6,20 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, Tex
 import { colors } from "@/styles/colors";
 import { router } from "expo-router";
 
+const API_BASE_URL = "http://127.0.0.1:8000/api";
+
 export default function Profile() {
+  const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);
   const getUserData = async () => {
     try {
+      setIsLoadingProfile(true);
       const token = await AsyncStorage.getItem("authToken");
       if (!token) {
-        alert("No authentication token found. Please log in again.");
         router.replace("/user/login");
         return;
       }
-      const response = await fetch("http://127.0.0.1:8000/api/user", {
+
+      const response = await fetch(`${API_BASE_URL}/user`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -24,14 +28,49 @@ export default function Profile() {
       });
       const json = await response.json();
       if (!response.ok) {
+        if (response.status === 401) {
+          await AsyncStorage.removeItem("authToken");
+          router.replace("/user/login");
+          return;
+        }
+
         alert(json.message || "Failed to fetch user data. Please try again.");
         return;
       }
-      // Handle user data (e.g., set state)
-      console.log("User data:", json);
+
+      setUserName(json.name || "-");
+      setContact(json.contact || "-");
     } catch (error) {
       console.error("Error fetching user data:", error);
       alert("An error occurred while fetching user data. Please try again.");
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  React.useEffect(() => {
+    getUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+
+      if (token) {
+        await fetch(`${API_BASE_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (error) {
+      // Continue local logout even if API logout fails
+      console.error("Error during logout:", error);
+    } finally {
+      await AsyncStorage.removeItem("authToken");
+      router.replace("/user/login");
     }
   };
 
@@ -47,14 +86,14 @@ export default function Profile() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => {},
+          onPress: handleLogout,
         },
       ],
       { cancelable: true },
     );
   };
-  const [userName, setUserName] = React.useState("Budi");
-  const [contact, setContact] = React.useState("081234567890");
+  const [userName, setUserName] = React.useState("");
+  const [contact, setContact] = React.useState("");
   const [editNameModalVisible, setEditNameModalVisible] = React.useState(false);
   const [editContactModalVisible, setEditContactModalVisible] = React.useState(false);
   const [editNameValue, setEditNameValue] = React.useState("");
@@ -75,6 +114,8 @@ export default function Profile() {
             <Feather name="camera" style={styles.cameraIcon} />
           </TouchableOpacity>
         </View>
+
+        {isLoadingProfile && <Text style={{ textAlign: "center", color: "#666", marginBottom: 8 }}>Loading profile...</Text>}
 
         <Text style={styles.sectionTitle}>General Information</Text>
         <View style={styles.informationContainer}>

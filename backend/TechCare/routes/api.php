@@ -36,6 +36,9 @@ Route::post('/mitra/login', [AuthController::class, 'loginMitra']);
 
 // butuh token (protected routes)
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', [AuthController::class, 'me']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
     // for users
     Route::post('/ratings', [RatingController::class, 'store']);
     Route::post('/orders', [OrderController::class, 'store']);
