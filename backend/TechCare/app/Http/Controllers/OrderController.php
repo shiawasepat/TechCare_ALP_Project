@@ -65,7 +65,11 @@ public function store(Request $request)
         $mitra = $request->user();
 
         // 3. Find only the orders that belong to THIS Mitra's Service Center
-        $query = Order::with(['user', 'service'])
+        $query = Order::with([
+            'user:id_user,name',
+            'service:id_service,id_service_center,nama_service,harga_service',
+            'service.serviceCenter:id_service_center,lokasi_service_center,jarak_service_center,name_service_center',
+        ])
             ->whereHas('service', function ($query) use ($mitra) {
                 // Here is the magic: We look up the Mitra's Service Center ID!
                 $query->where('id_service_center', $mitra->serviceCenter->id_service_center); 
