@@ -1,6 +1,7 @@
 import { Animated, Text, Dimensions, StyleSheet, TouchableOpacity, View, Modal, Pressable, FlatList, Easing } from "react-native";
 import { BlurView } from "expo-blur";
 import { useState, useEffect, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors } from "@/styles/colors";
 import { LocationIcon } from "@/components/svg/Location";
 import { DropdownIcon } from "@/components/svg/Dropdown";
@@ -9,7 +10,6 @@ import { MitraBottomNavigation } from "@/components/MitraBottomNavigation";
 import { MoreHorizontal } from "@/components/svg/MoreHorizontal";
 
 const { width } = Dimensions.get("window");
-
 interface Order {
   id: string;
   name: string;
@@ -17,10 +17,38 @@ interface Order {
   location: string;
   distance: string;
   serviceType: string;
+  serviceVariant: "Home Service" | "Scheduled Service";
   price: string;
   status: "new" | "ongoing" | "done";
   isNew?: boolean;
 }
+
+type BackendOrder = {
+  id_order?: number | string;
+  id?: number | string;
+  tipe_order?: "reservasi" | "home_service";
+  waktu_reservasi?: string | null;
+  alamat_home_service?: string | null;
+  status_order?: string | null;
+  created_at?: string | null;
+  user?: {
+    name?: string | null;
+  };
+  service?: {
+    nama_service?: string | null;
+    harga_service?: number | string | null;
+    serviceCenter?: {
+      lokasi_service_center?: string | null;
+      jarak_service_center?: number | string | null;
+      name_service_center?: string | null;
+    } | null;
+    service_center?: {
+      lokasi_service_center?: string | null;
+      jarak_service_center?: number | string | null;
+      name_service_center?: string | null;
+    } | null;
+  } | null;
+};
 
 const MOCK_ORDERS: Order[] = [
   {
@@ -30,63 +58,84 @@ const MOCK_ORDERS: Order[] = [
     location: "Jl. Pettarani No 89",
     distance: "2.4 km away",
     serviceType: "Home Service",
+    serviceVariant: "Home Service",
     price: "Rp120.000",
     status: "new",
     isNew: true,
-  },
-  {
-    id: "2",
-    name: "Laury",
-    time: "15 mins ago",
-    location: "Jl. Pettarani No 89",
-    distance: "2.4 km away",
-    serviceType: "Scheduled Service",
-    price: "Rp120.000",
-    status: "new",
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Laury",
-    time: "30 mins ago",
-    location: "Jl. Pettarani No 89",
-    distance: "2.4 km away",
-    serviceType: "Scheduled Service",
-    price: "Rp120.000",
-    status: "new",
-    isNew: true,
-  },
-  {
-    id: "4",
-    name: "Laury",
-    time: "15 mins ago",
-    location: "Jl. Pettarani No 89",
-    distance: "2.4 km away",
-    serviceType: "Scheduled Service",
-    price: "Rp120.000",
-    status: "new",
-  },
-  {
-    id: "5",
-    name: "Laury",
-    time: "15 mins ago",
-    location: "Jl. Pettarani No 89",
-    distance: "2.4 km away",
-    serviceType: "Scheduled Service",
-    price: "Rp120.000",
-    status: "new",
-  },
-  {
-    id: "6",
-    name: "Laury",
-    time: "15 mins ago",
-    location: "Jl. Pettarani No 89",
-    distance: "2.4 km away",
-    serviceType: "Home Service",
-    price: "Rp120.000",
-    status: "new",
   },
 ];
+
+const API_BASE_URL = "http://127.0.0.1:8000/api";
+
+const mapBackendStatus = (status?: string | null): Order["status"] => {
+  switch (status) {
+    case "pending":
+    case "new":
+      return "new";
+    case "in_progress":
+    case "ongoing":
+      return "ongoing";
+    case "completed":
+    case "done":
+      return "done";
+    default:
+      return "new";
+  }
+};
+
+const formatCurrency = (value?: number | string | null) => {
+  const numericValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "Rp0";
+  }
+
+  return `Rp${numericValue.toLocaleString("id-ID")}`;
+};
+
+const formatDistance = (value?: number | string | null) => {
+  const numericValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "0 km away";
+  }
+
+  return `${numericValue.toLocaleString("id-ID", { maximumFractionDigits: 2 })} km away`;
+};
+
+const formatTime = (backendOrder: BackendOrder) => {
+  const source = backendOrder.waktu_reservasi || backendOrder.created_at;
+
+  if (!source) {
+    return "Just now";
+  }
+
+  const parsedDate = new Date(source);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Just now";
+  }
+
+  return parsedDate.toLocaleString("id-ID", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+};
+
+const transformOrderData = (apiOrder: BackendOrder): Order => {
+  const serviceCenter = apiOrder.service?.serviceCenter || apiOrder.service?.service_center;
+  const serviceVariant: Order["serviceVariant"] = apiOrder.tipe_order === "home_service" ? "Home Service" : "Scheduled Service";
+
+  return {
+    id: apiOrder.id_order?.toString() || apiOrder.id?.toString() || "",
+    name: apiOrder.user?.name || "User",
+    time: formatTime(apiOrder),
+    location: apiOrder.alamat_home_service || serviceCenter?.lokasi_service_center || serviceCenter?.name_service_center || "Location not specified",
+    distance: formatDistance(serviceCenter?.jarak_service_center),
+    serviceType: apiOrder.service?.nama_service || "Service",
+    serviceVariant,
+    price: formatCurrency(apiOrder.service?.harga_service),
+    status: mapBackendStatus(apiOrder.status_order),
+    isNew: mapBackendStatus(apiOrder.status_order) === "new",
+  };
+};
 
 export default function OrderView() {
   const tabs = ["all", "new", "ongoing", "done"];
@@ -94,6 +143,8 @@ export default function OrderView() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [handlingOrderId, setHandlingOrderId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [activeTab, setActiveTab] = useState<"all" | "new" | "ongoing" | "done">("all");
   const cardAnimations = useRef(MOCK_ORDERS.map(() => new Animated.Value(0))).current;
@@ -102,6 +153,55 @@ export default function OrderView() {
   const [selectedStatusOption, setSelectedStatusOption] = useState<"open" | "closed-while" | "closed-until">("open");
   const [closedDuration, setClosedDuration] = useState<30 | 60 | 90>(30);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  const getOrderData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("No authentication token found. Please log in again.");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/mitra/orders`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const json = await response.json();
+      console.log("Orders Data:", json);
+
+      const ordersArray = Array.isArray(json.orders) ? json.orders : Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
+
+      if (!Array.isArray(ordersArray)) {
+        throw new Error("Orders data is not an array");
+      }
+
+      // Transform all orders to the Order interface
+      const transformedOrders = ordersArray.map((order: BackendOrder) => transformOrderData(order));
+      setOrders(transformedOrders);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Error fetching orders:", errorMessage);
+      setError(errorMessage);
+      // Keep mock data if fetch fails
+      setOrders(MOCK_ORDERS);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getOrderData();
+  }, []);
 
   useEffect(() => {
     const tabIndex = tabs.indexOf(activeTab);
@@ -200,7 +300,7 @@ export default function OrderView() {
           </View>
 
           <View style={styles.serviceSection}>
-            <ServiceIcon service={item.serviceType as "Home Service" | "Scheduled Service"} />
+            <ServiceIcon service={item.serviceVariant} />
             <Text style={styles.serviceType}>{item.serviceType}</Text>
           </View>
 
@@ -465,7 +565,22 @@ export default function OrderView() {
       </View>
 
       {/* Order List */}
-      <FlatList data={filteredOrders} renderItem={renderOrderCard} scrollEnabled={true} style={styles.listContent} contentContainerStyle={{ paddingBottom: 100 }} />
+      {error && (
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fee", marginHorizontal: 16, marginTop: 12, borderRadius: 8 }}>
+          <Text style={{ color: "#c00", fontWeight: "600" }}>Error: {error}</Text>
+          <TouchableOpacity onPress={getOrderData} style={{ marginTop: 8 }}>
+            <Text style={{ color: "#2196f3", fontWeight: "600" }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {isLoading ? (
+        <View style={{ paddingVertical: 40, alignItems: "center" }}>
+          <Text style={{ color: "#999", fontSize: 16 }}>Loading orders...</Text>
+        </View>
+      ) : (
+        <FlatList data={filteredOrders} renderItem={renderOrderCard} scrollEnabled={true} style={styles.listContent} contentContainerStyle={{ paddingBottom: 100 }} />
+      )}
 
       {/* Reject Confirmation Modal */}
       <Modal visible={rejectConfirmVisible} transparent animationType="fade">
