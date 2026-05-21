@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useState } from "react";
 import { router, useRouter } from "expo-router";
 import { EyeIcon } from "@/components/svg/EyeIcon";
@@ -52,54 +52,64 @@ export function login() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* Logo and Title */}
-        <View style={[styles.headerContainer, { paddingTop: insets.top + 24 }]}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleTech}>Tech</Text>
-            <Text style={styles.titleCare}>Care</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={insets.top}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+          {/* Logo and Title */}
+          <View style={[styles.headerContainer, { paddingTop: insets.top + 24 }]}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.titleTech}>Tech</Text>
+              <Text style={styles.titleCare}>Care</Text>
+            </View>
           </View>
-        </View>
 
-        {/* Blue Container */}
-        <View style={styles.blueContainer}>
-          {/* Google Sign In Button */}
-          <TouchableOpacity style={styles.googleButton}>
-            <Image source={require("../../../assets/Google.jpg")} style={styles.googleIcon} />
-            <Text style={styles.googleButtonText}>Sign in with Google</Text>
-          </TouchableOpacity>
-
-          {/* Or Divider */}
-          <Text style={styles.orText}>or</Text>
-
-          {/* Email Input */}
-          <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
-
-          {/* Password Input */}
-          <View style={styles.passwordContainer}>
-            <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
-            <View style={styles.divider} />
-            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-              <EyeIcon show={showPassword} />
+          {/* Blue Container */}
+          <View style={styles.blueContainer}>
+            {/* Google Sign In Button */}
+            <TouchableOpacity style={styles.googleButton}>
+              <Image source={require("../../../assets/Google.jpg")} style={styles.googleIcon} />
+              <Text style={styles.googleButtonText}>Sign in with Google</Text>
             </TouchableOpacity>
-          </View>
 
-          {/* Sign In Button */}
-          <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={isLoading}>
-            <Text style={styles.signInButtonText}>{isLoading ? "Signing in..." : "Sign in"}</Text>
-          </TouchableOpacity>
+            {/* Or Divider */}
+            <Text style={styles.orText}>or</Text>
 
-          {/* Create Account Link */}
-          <View style={styles.createAccountContainer}>
-            <Text style={styles.createAccountText}>New here? </Text>
-            <TouchableOpacity>
-              <Text style={styles.createAccountLink} onPress={() => router.push("/user/register")}>
-                Create an account
-              </Text>
+            {/* Email Input */}
+            <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
+
+            {/* Password Input */}
+            <View style={styles.passwordContainer}>
+              <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
+              <View style={styles.divider} />
+              <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+                <EyeIcon show={showPassword} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Sign In Button */}
+            <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={isLoading}>
+              <Text style={styles.signInButtonText}>{isLoading ? "Signing in..." : "Sign in"}</Text>
             </TouchableOpacity>
+
+            {/* Create Account Link */}
+            <View style={styles.createAccountContainer}>
+              <Text style={styles.createAccountText}>New here? </Text>
+              <TouchableOpacity>
+                <Text style={styles.createAccountLink} onPress={() => router.push("/user/register")}>
+                  Create an account
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Partner Login */}
+            <View style={{ marginTop: 30, alignItems: "center" }}>
+              <Text style={{ color: "#fff", fontSize: 16 }}>Are you a technician?</Text>
+              <TouchableOpacity onPress={() => router.push("/mitra/login")}>
+                <Text style={styles.createAccountLink}>Login as Partner</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -123,7 +133,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 80,
+    marginVertical: 40,
   },
   titleTech: {
     fontSize: 28,
@@ -141,7 +151,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 20,
-    paddingTop: 30,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   googleButton: {
