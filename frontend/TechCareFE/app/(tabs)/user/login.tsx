@@ -16,7 +16,7 @@ export function login() {
   const getLoginData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("https://herbal-ungodly-reformed.ngrok-free.dev/api/login", {
+      const response = await fetch("http://127.0.0.1:8000/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

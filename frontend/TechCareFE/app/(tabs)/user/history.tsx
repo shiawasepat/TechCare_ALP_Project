@@ -10,7 +10,7 @@ export default function HistoryScreen() {
 	return (
 		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<BackButtonHeader title="History" onBack={() => router.back()} />
+			<BackButtonHeader title="History" />
 
 			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 				{historyItems.map((item) => (
