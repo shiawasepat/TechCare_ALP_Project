@@ -90,7 +90,7 @@ export function dashboard() {
         setIsLoading(true);
         console.log("Fetching from ngrok...");
 
-        const response = await fetch("https://herbal-ungodly-reformed.ngrok-free.dev/api/service_centers", {
+        const response = await fetch("http://127.0.0.1:8000/api/service_centers", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

@@ -30,7 +30,7 @@ export default function ChatListScreen() {
 	return (
 		<SafeAreaView style={styles.safeArea}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
-			<BackButtonHeader title="Chat" onBack={() => router.back()} />
+			<BackButtonHeader title="Chat" />
 
 			<View style={[styles.container, { paddingBottom: insets.bottom + 96 }]}> 
 				<Text style={styles.sectionLabel}>Recent chats</Text>

@@ -26,7 +26,7 @@ export function register() {
       return;
     }
     try {
-      const response = await fetch("https://herbal-ungodly-reformed.ngrok-free.dev/api/users", {
+      const response = await fetch("http://127.0.0.1:8000/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
