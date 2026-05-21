@@ -1,6 +1,5 @@
-import { Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
+import { Alert, Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
 import { useState, useEffect, useRef } from "react";
-import { useNavigation } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors as defaultColor } from "@/styles/colors";
@@ -13,6 +12,7 @@ import { ClockIcon } from "@/components/svg/Clock";
 import { CheckIcon } from "@/components/svg/Check";
 
 type ServiceCenterDetails = {
+  id_service_center: number;
   name: string;
   address: string;
   rating: number;
@@ -22,31 +22,31 @@ type ServiceCenterDetails = {
   image: ImageSourcePropType;
 };
 
+type ServiceListItem = {
+  id_service: number | string;
+  name: string;
+  price?: string;
+  description?: string;
+  raw: any;
+};
+
 export function details() {
-  const getServiceCenterData = async () => {
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/service_centers/{service_center}", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: 1 }), // Example payload, adjust as needed
-      });
-    } catch (error) {
-      console.error("Error fetching service center data:", error);
-    }
-  };
+  const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 
   const [isLoading, setIsLoading] = useState(false);
+  const [serviceData, setServiceData] = useState<any | null>(null);
+  const [servicesList, setServicesList] = useState<any[]>([]);
+  const [ratingsList, setRatingsList] = useState<any[]>([]);
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string }>();
-  const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "Mugen Computer Pettarani";
-  const serviceAddress = typeof params.address === "string" && params.address.length > 0 ? params.address : "Jl. A. P. Pettarani No.89a, Makassar";
-  const serviceDistance = typeof params.distance === "string" && params.distance.length > 0 ? params.distance : "5.1 km";
-  const serviceClosesAt = typeof params.closesAt === "string" && params.closesAt.length > 0 ? params.closesAt : "09.00 pm";
-  const ratingValue = typeof params.rating === "string" ? Number(params.rating) : 4;
+  const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string; service_center?: string; id?: string }>();
+  const serviceId = Array.isArray(params.service_center) ? params.service_center[0] : params.service_center || (Array.isArray(params.id) ? params.id[0] : params.id) || "";
+  const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "";
+  const serviceAddress = typeof params.address === "string" && params.address.length > 0 ? params.address : "";
+  const serviceDistance = typeof params.distance === "string" && params.distance.length > 0 ? params.distance : "";
+  const serviceClosesAt = typeof params.closesAt === "string" && params.closesAt.length > 0 ? params.closesAt : "";
+  const ratingValue = typeof params.rating === "string" ? Number(params.rating) : "";
   const [activeTab, setActiveTab] = useState("service");
-  const [selectedService, setSelectedService] = useState<"Home Service" | "Scheduled Service">("Home Service");
+  const [selectedService, setSelectedService] = useState("Please choose a service");
   const slideAnim = useRef(new Animated.Value(0)).current;
   const transformDetailsData = (data: any) => {
     return {
@@ -60,16 +60,24 @@ export function details() {
     };
   };
 
+  const transformServiceData = (service: any): ServiceListItem => ({
+    id_service: service.id_service ?? service.id ?? service.nama_service ?? crypto.randomUUID(),
+    name: service.nama_service || service.name || service.title || "Service",
+    price: typeof service.harga_service === "number" ? `Rp${service.harga_service.toLocaleString("id-ID")}` : service.price,
+    description: service.deskripsi_service || service.description || "",
+    raw: service,
+  });
+
   const tabs = ["service", "reviews", "about"];
 
+  const serviceNameDisplay = serviceData?.name || serviceName;
+  const serviceAddressDisplay = serviceData?.lokasi || serviceData?.address || serviceAddress;
+  const serviceDistanceDisplay = serviceData?.distance || serviceDistance;
+  const serviceClosesAtDisplay = serviceData?.closesAt || serviceClosesAt;
+  const ratingValueDisplay = typeof serviceData?.rating === "number" ? serviceData.rating : ratingValue;
+
   const handleContinue = () => {
-    // Commented to prevent navigation
-    // if (selectedService == "Home Service") {
-    //   navigation.navigate("home-service");
-    // }
-    // else if (selectedService == "Scheduled Service") {
-    //   navigation.navigate("scheduled-service");
-    // }
+    router.push("../mockup/confirm");
   };
 
   const serviceCenterImages: Record<string, ImageSourcePropType> = {
@@ -82,46 +90,79 @@ export function details() {
     return serviceCenterImages[name] || require("../../../assets/images/sv_ct/placeholder.jpg");
   };
 
-  useEffect(() => {
-    const getServiceCenterData = async () => {
+  const getServiceCenterData = async () => {
+    setIsLoading(true);
+    try {
+      const url = `${API_BASE_URL}/service_centers/${serviceId}`;
+      console.log("Fetching service center from:", url);
+      const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+      const text = await response.text();
+      let json: any = null;
       try {
-        setIsLoading(true);
-        const response = await fetch("http://127.0.0.1:8000/api/service_centers/{id}", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const json = await response.json();
-        console.log("Service Center Data:", json);
-      } catch (error) {
-        console.error("Error fetching service center data:", error);
-      } finally {
-        setIsLoading(false);
+        json = text ? JSON.parse(text) : null;
+      } catch (e) {
+        json = null;
       }
-    };
 
+      if (!serviceId) {
+        throw new Error("Missing service center id in route params");
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} from ${url}: ${json?.message || text}`);
+      }
+
+      const payload = json || {};
+      const data = payload.data || payload || {};
+
+      const mapped = {
+        id_service_center: data.id_service_center,
+        name: data.name_service_center || data.name || "",
+        deskripsi: data.deskripsi || data.description || "",
+        lokasi: data.lokasi || data.location || data.address || "",
+        status: data.status || "",
+        foto: data.foto || data.photo || data.image || null,
+        rating: data.ratings_ang_vilai_rating || data.rating || data.ratings || 0,
+        ratingCount: data.ratings_count || (data.ratings ? data.ratings.length : 0),
+        closesAt: data.closes_at || data.closing_time || null,
+        distance: data.distance ? `${data.distance} km` : null,
+      };
+
+      setServiceData(mapped);
+      const services = data.services || payload.services || [];
+      setServicesList(Array.isArray(services) ? services.map(transformServiceData) : []);
+      const ratings = data.ratings || payload.ratings || [];
+      setRatingsList(Array.isArray(ratings) ? ratings : []);
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : String(err);
+      Alert.alert("Failed to load service center", message, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Retry", onPress: () => getServiceCenterData() },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     getServiceCenterData();
   }, []);
 
   return (
     <SafeAreaView style={styles.mainContainer} edges={["top", "left", "right"]}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
+      <View style={styles.topBar}>
         <BackBtn />
         <Text style={styles.detailsText}>Details</Text>
       </View>
 
       <ScrollView style={styles.container}>
         {/* Image */}
-        <Image source={getServiceCenterImage(serviceName)} style={styles.detailsImage} />
+        <Image source={getServiceCenterImage(serviceNameDisplay)} style={styles.detailsImage} />
 
         {/* Title with Save/Share */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 15 }}>
-          <Text style={styles.detailsTitle}>{serviceName}</Text>
+          <Text style={styles.detailsTitle}>{serviceNameDisplay}</Text>
           <View style={{ flexDirection: "row" }}>
             <SaveBtn />
             <ShareBtn />
@@ -131,11 +172,11 @@ export function details() {
         {/* Rating and Address */}
         <View style={styles.starsContainer}>
           {[1, 2, 3, 4, 5].map((star) => (
-            <StarIcon key={star} isFilled={star <= Math.floor(ratingValue)} />
+            <StarIcon key={star} isFilled={star <= Math.floor(ratingValueDisplay)} />
           ))}
-          <Text style={styles.ratingText}>({ratingValue.toFixed(1)})</Text>
+          <Text style={styles.ratingText}>({Number(ratingValueDisplay).toFixed(1)})</Text>
         </View>
-        <Text style={styles.addressText}>{serviceAddress}</Text>
+        <Text style={styles.addressText}>{serviceAddressDisplay}</Text>
 
         {/* Business Hours Section */}
         <View style={styles.infoCard}>
@@ -180,24 +221,35 @@ export function details() {
 
         {/* Service Card */}
         {activeTab === "service" && (
-          // Home Service Card
           <View style={styles.contentContainer}>
-            <Pressable onPress={() => setSelectedService("Home Service")} style={[styles.serviceCard, selectedService === "Home Service" && styles.serviceCardSelected]}>
-              <Text style={styles.serviceName}>Home Service</Text>
-              <Text style={styles.servicePrice}>Rp110.000</Text>
-              <Text style={styles.serviceDescription}>Our expert technician will come to your location.</Text>
-            </Pressable>
+            {servicesList && servicesList.length > 0 ? (
+              servicesList.map((svc: any, idx: number) => (
+                <Pressable key={String(svc.id_service ?? idx)} onPress={() => setSelectedService(svc.name || "Service")} style={[styles.serviceCard, selectedService === svc.name && styles.serviceCardSelected]}>
+                  <Text style={styles.serviceName}>{svc.name || `Service ${idx + 1}`}</Text>
+                  {svc.price && <Text style={styles.servicePrice}>{svc.price}</Text>}
+                  {svc.description && <Text style={styles.serviceDescription}>{svc.description}</Text>}
+                </Pressable>
+              ))
+            ) : (
+              // fallback static options
+              <>
+                <Pressable onPress={() => setSelectedService("Home Service")} style={[styles.serviceCard, selectedService === "Home Service" && styles.serviceCardSelected]}>
+                  <Text style={styles.serviceName}>Home Service</Text>
+                  <Text style={styles.servicePrice}>Rp110.000</Text>
+                  <Text style={styles.serviceDescription}>Our expert technician will come to your location.</Text>
+                </Pressable>
 
-            <Pressable onPress={() => setSelectedService("Scheduled Service")} style={[styles.serviceCard, selectedService === "Scheduled Service" && styles.serviceCardSelected]}>
-              <Text style={styles.serviceName}>Scheduled Service</Text>
-              <Text style={styles.servicePrice}>Rp90.000</Text>
-              <Text style={styles.serviceDescription}>Schedule your service in advance.</Text>
-            </Pressable>
+                <Pressable onPress={() => setSelectedService("Scheduled Service")} style={[styles.serviceCard, selectedService === "Scheduled Service" && styles.serviceCardSelected]}>
+                  <Text style={styles.serviceName}>Scheduled Service</Text>
+                  <Text style={styles.servicePrice}>Rp90.000</Text>
+                  <Text style={styles.serviceDescription}>Schedule your service in advance.</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         )}
       </ScrollView>
       <View style={styles.bottomBar}>
-        <ServiceIcon service={selectedService} />
         <View style={{ flexDirection: "column", marginLeft: 12 }}>
           <Text>Selected Service</Text>
           <Text style={{ fontWeight: "bold" }}>{selectedService}</Text>
@@ -207,7 +259,7 @@ export function details() {
         </TouchableOpacity>
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.continueButton}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
@@ -228,7 +280,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 30,
-    paddingVertical: 20,
     backgroundColor: "#fff",
     zIndex: 100,
   },
