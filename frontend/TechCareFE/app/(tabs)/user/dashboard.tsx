@@ -12,6 +12,7 @@ import { getCurrentUserLocation } from "@/utils/location";
 type FilterKey = "Nearest" | "Top Rated" | "Open Now" | "Filter";
 
 type ServiceCenter = {
+  id_service_center: number;
   name: string;
   rating: number;
   reviews: number;
@@ -54,6 +55,8 @@ const promoSlides: PromoSlide[] = [
   },
 ];
 
+const API_SERVER_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
+
 export function dashboard() {
   const [serviceCenters, setServiceCenters] = useState<ServiceCenter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +66,7 @@ export function dashboard() {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const transformServiceCenterData = (data: any): ServiceCenter => {
     return {
+      id_service_center: data.id_service_center,
       name: data.name_service_center,
       rating: data.ratings_avg_nilai_rating || 0,
       reviews: data.ratings_count || 0,
@@ -90,7 +94,7 @@ export function dashboard() {
         setIsLoading(true);
         console.log("Fetching from ngrok...");
 
-        const response = await fetch("http://127.0.0.1:8000/api/service_centers", {
+        const response = await fetch(`${API_SERVER_URL}/service_centers`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -339,6 +343,7 @@ export function dashboard() {
                     router.push({
                       pathname: "/user/details",
                       params: {
+                        service_center: String(serviceCenter.id_service_center),
                         name: serviceCenter.name,
                         rating: serviceCenter.rating.toString(),
                         closesAt: serviceCenter.closesAt,
