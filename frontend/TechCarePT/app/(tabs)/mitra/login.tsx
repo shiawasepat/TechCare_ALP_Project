@@ -1,4 +1,4 @@
-import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import { EyeIcon } from "@/components/svg/EyeIcon";
@@ -7,6 +7,7 @@ import { colors as defaultColor } from "@/styles/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export function MitraLogin() {
+  const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +16,7 @@ export function MitraLogin() {
   const getMitraLoginData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/mitra/login", {
+      const response = await fetch(`${API_BASE_URL}/mitra/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,7 +36,7 @@ export function MitraLogin() {
       await AsyncStorage.setItem("authToken", json.token);
 
       // Navigate to home
-      router.replace("./dashboard");
+      router.replace("/mitra/order-view");
     } catch (error) {
       console.error("Error during login:", error);
       alert("An error occurred during login. Please try again.");
@@ -55,41 +56,49 @@ export function MitraLogin() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Logo and Title */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>TechCare</Text>
-      </View>
-
-      {/* Blue Container */}
-      <View style={styles.blueContainer}>
-        {/* Email Input */}
-        <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
-
-        {/* Password Input */}
-        <View style={styles.passwordContainer}>
-          <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-            <EyeIcon show={showPassword} />
-          </TouchableOpacity>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Logo and Title */}
+        <View style={styles.headerContainer}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleTech}>Tech</Text>
+            <Text style={styles.titleCare}>Care</Text>
+          </View>
+          <View style={styles.subtitleContainer}>
+            <Text>for Partner</Text>
+          </View>
         </View>
 
-        {/* Sign In Button */}
-        <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={isLoading}>
-          <Text style={styles.signInButtonText}>{isLoading ? "Signing in..." : "Sign in"}</Text>
-        </TouchableOpacity>
+        {/* Blue Container */}
+        <View style={styles.blueContainer}>
+          {/* Email Input */}
+          <TextInput placeholder="Email" value={email} onChangeText={setEmail} placeholderTextColor="#999" style={styles.input} />
 
-        {/* Create Account Link */}
-        <View style={styles.createAccountContainer}>
-          <Text style={styles.createAccountText}>Don't have an account? </Text>
-          <TouchableOpacity style={styles.contactUsButton}>
-            <Ionicons name="call" size={16} color="#fff" style={styles.phoneIcon} />
-            <Text style={styles.createAccountLink}>Contact us</Text>
+          {/* Password Input */}
+          <View style={styles.passwordContainer}>
+            <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} placeholderTextColor="#999" style={styles.passwordInput} />
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+              <EyeIcon show={showPassword} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign In Button */}
+          <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={isLoading}>
+            <Text style={styles.signInButtonText}>{isLoading ? "Signing in..." : "Sign in"}</Text>
           </TouchableOpacity>
+
+          {/* Create Account Link */}
+          <View style={styles.createAccountContainer}>
+            <Text style={styles.createAccountText}>Don't have an account? </Text>
+            <TouchableOpacity style={styles.contactUsButton}>
+              <Ionicons name="call" size={16} color="#fff" style={styles.phoneIcon} />
+              <Text style={styles.createAccountLink}>Contact us</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -104,14 +113,27 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 80,
   },
-  title: {
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 8,
+  },
+  titleTech: {
     fontSize: 28,
-    margin: 80,
     fontWeight: "bold",
     color: "#000",
+  },
+  titleCare: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: defaultColor.primary.backgroundColor,
+  },
+  subtitleContainer: {
+    marginTop: 8,
   },
   blueContainer: {
     backgroundColor: defaultColor.primary.backgroundColor,
