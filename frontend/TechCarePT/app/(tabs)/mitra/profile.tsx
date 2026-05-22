@@ -1,120 +1,11 @@
 import React from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, TextInput, RefreshControl } from "react-native";
+import { MitraBottomNavigation } from "@/components/MitraBottomNavigation";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, TextInput } from "react-native";
 import { colors } from "@/styles/colors";
-import { router } from "expo-router";
-import { BackBtn } from "@/components/btn/back-btn";
-import { useFocusEffect } from "@react-navigation/native";
+import { DropdownIcon } from "@/components/svg/Dropdown";
 
-const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
-
-export default function Profile() {
-  const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);
-  const [userName, setUserName] = React.useState("");
-  const [contact, setContact] = React.useState("");
-  const [editNameModalVisible, setEditNameModalVisible] = React.useState(false);
-  const [editContactModalVisible, setEditContactModalVisible] = React.useState(false);
-  const [editNameValue, setEditNameValue] = React.useState("");
-  const [editContactValue, setEditContactValue] = React.useState("");
-
-  const getAuthToken = async () => {
-    const storedToken = await AsyncStorage.getItem("authToken");
-    return storedToken?.trim() || null;
-  };
-
-  const getUserData = async () => {
-    const url = `${API_BASE_URL}/user`;
-    try {
-      setIsLoadingProfile(true);
-      const token = await getAuthToken();
-      if (!token) {
-        router.replace("/user/login");
-        return;
-      }
-
-      console.log("Fetching user data from:", url);
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-
-      const text = await response.text();
-      console.log("Profile response status:", response.status, "body:", text);
-
-      const trimmed = text ? String(text).trim() : "";
-      if (trimmed && (/<!doctype html/i.test(trimmed) || /<html/i.test(trimmed))) {
-        console.error("Received HTML when expecting JSON for profile:", trimmed.slice(0, 500));
-        alert(`Server returned HTML instead of JSON. Check the API URL:\n${url}\nOpen it in a browser to inspect the response.`);
-        return;
-      }
-
-      let json: any = null;
-      try {
-        json = trimmed ? JSON.parse(trimmed) : null;
-      } catch (parseErr) {
-        json = null;
-      }
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          await AsyncStorage.removeItem("authToken");
-          router.replace("/user/login");
-          return;
-        }
-
-        const message = (json && (json.message || json.error)) || text || `Request failed with status ${response.status}`;
-        Alert.alert("Failed to load profile", String(message));
-        return;
-      }
-
-      const payload = json || {};
-      const data = payload.data || payload || {};
-
-      setUserName((data && (data.name || data.nama)) || "-");
-      setContact((data && (data.contact || data.phone || data.telepon)) || "-");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("Error fetching user data:", message);
-      alert(`Failed to load profile: ${message}`);
-    } finally {
-      setIsLoadingProfile(false);
-    }
-  };
-
-  // Re-fetch when screen comes into focus (useful when returning to this screen)
-  useFocusEffect(
-    React.useCallback(() => {
-      getUserData();
-    }, []),
-  );
-
-  const handleLogout = async () => {
-    try {
-      const token = await getAuthToken();
-
-      if (token) {
-        await fetch(`${API_BASE_URL}/logout`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
-    } catch (error) {
-      // Continue local logout even if API logout fails
-      console.error("Error during logout:", error);
-    } finally {
-      await AsyncStorage.removeItem("authToken");
-      router.replace("/user/login");
-    }
-  };
-
+export default function MitraProfile() {
   const logoutAlert = () => {
     Alert.alert(
       "Logout Confirmation",
@@ -127,19 +18,30 @@ export default function Profile() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: handleLogout,
+          onPress: () => {
+            // Handle actual logout logic here, such as clearing tokens or navigating to the login screen
+            console.log("User logged out");
+          },
         },
       ],
       { cancelable: true },
     );
   };
+  const [serviceCenterName, setServiceCenterName] = React.useState("Elextra Komputer");
+  const [location, setLocation] = React.useState("5.1 km • Jl. A.P. Pettarani Ruko Diamond No. 3");
+  const [editNameModalVisible, setEditNameModalVisible] = React.useState(false);
+  const [editLocationModalVisible, setEditLocationModalVisible] = React.useState(false);
+  const [editNameValue, setEditNameValue] = React.useState("");
+  const [editLocationValue, setEditLocationValue] = React.useState("");
   return (
     <View style={styles.profileContainer}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }} refreshControl={<RefreshControl refreshing={isLoadingProfile} onRefresh={getUserData} />}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
         {/* TopBar */}
         <View style={styles.topBar}>
-          <BackBtn />
-          <Text style={styles.title}>My Profile</Text>
+          <Text style={styles.title}>My Service Center Profile</Text>
+          <TouchableOpacity style={styles.editBtn} onPress={logoutAlert}>
+            <Text style={styles.editBtnText}>Logout</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar} />
@@ -147,8 +49,19 @@ export default function Profile() {
             <Feather name="camera" style={styles.cameraIcon} />
           </TouchableOpacity>
         </View>
-
-        {isLoadingProfile && <Text style={{ textAlign: "center", color: "#666", marginBottom: 8 }}>Loading profile...</Text>}
+        {/* Shop State */}
+        <View style={styles.stateContainer}>
+          <View style={styles.stateHeader}>
+            <View style={styles.stateItem}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#2D6BFF", marginRight: 6 }} />
+              <Text style={styles.stateText}>Open</Text>
+            </View>
+            <DropdownIcon />
+          </View>
+          <View style={styles.operationalHours}>
+            <Text style={styles.operationalHoursText}>Operational hours for today 09:00 - 20:00</Text>
+          </View>
+        </View>
 
         <Text style={styles.sectionTitle}>General Information</Text>
         <View style={styles.informationContainer}>
@@ -156,13 +69,13 @@ export default function Profile() {
             <View style={styles.infoHeader}>
               <View style={styles.infoLabelContainer}>
                 <MaterialCommunityIcons name="storefront" size={20} color="#2D6BFF" />
-                <Text style={styles.infoLabel}>Name</Text>
+                <Text style={styles.infoLabel}>Service center name</Text>
               </View>
               <TouchableOpacity style={styles.changeBtn}>
                 <Text
                   style={styles.changeBtnText}
                   onPress={() => {
-                    setEditNameValue(userName);
+                    setEditNameValue(serviceCenterName);
                     setEditNameModalVisible(true);
                   }}
                 >
@@ -170,53 +83,61 @@ export default function Profile() {
                 </Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.infoValue}>{userName}</Text>
+            <Text style={styles.infoValue}>{serviceCenterName}</Text>
           </View>
           <View style={styles.separator} />
           <View style={styles.infoItem}>
             <View style={styles.infoHeader}>
               <View style={styles.infoLabelContainer}>
                 <MaterialCommunityIcons name="map-marker" size={20} color="#2D6BFF" />
-                <Text style={styles.infoLabel}>Contact No.</Text>
+                <Text style={styles.infoLabel}>Location</Text>
               </View>
               <TouchableOpacity style={styles.changeBtn}>
                 <Text
                   style={styles.changeBtnText}
                   onPress={() => {
-                    setEditContactValue(contact);
-                    setEditContactModalVisible(true);
+                    setEditLocationValue(location);
+                    setEditLocationModalVisible(true);
                   }}
                 >
                   Change
                 </Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.infoValue}>{contact}</Text>
+            <Text style={styles.infoValue}>{location}</Text>
           </View>
-          <View style={styles.separator} />
-          <TouchableOpacity style={styles.infoItem} onPress={() => {}}>
-            <View style={styles.infoHeader}>
-              <View style={styles.infoLabelContainer}>
-                <MaterialCommunityIcons name="translate" size={20} color="#2D6BFF" />
-                <Text style={styles.infoLabel}>Choose Language</Text>
-              </View>
-            </View>
-            <Text style={styles.infoValue}>English</Text>
-          </TouchableOpacity>
         </View>
 
+        <Text style={styles.sectionTitle}>Settings</Text>
+        <View style={styles.settingsContainer}>
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <View style={styles.settingIcon}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color="#2D6BFF" />
+              </View>
+              <Text style={styles.settingItemText}>Operation hour</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#999" />
+          </TouchableOpacity>
+          <View style={styles.settingSeparator} />
+          <TouchableOpacity style={styles.settingItem}>
+            <View style={styles.settingItemLeft}>
+              <View style={styles.settingIcon}>
+                <MaterialCommunityIcons name="map-marker" size={20} color="#2D6BFF" />
+              </View>
+              <Text style={styles.settingItemText}>Withdrawal account</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#999" />
+          </TouchableOpacity>
+        </View>
         {/* Save Changes */}
         <View style={styles.saveContainer}>
           <TouchableOpacity style={styles.saveBtn}>
             <Text style={styles.saveBtnText}>Save Changes</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.saveContainer}>
-          <TouchableOpacity style={styles.editBtn} onPress={logoutAlert}>
-            <Text style={styles.editBtnText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
+      <MitraBottomNavigation />
       {/* Edit Service Center Name Modal */}
       <Modal visible={editNameModalVisible} transparent={true} animationType="fade">
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }}>
@@ -243,7 +164,7 @@ export default function Profile() {
               <TouchableOpacity
                 style={{ flex: 1, backgroundColor: "#2D6BFF", paddingVertical: 10, borderRadius: 4 }}
                 onPress={() => {
-                  setUserName(editNameValue);
+                  setServiceCenterName(editNameValue);
                   setEditNameModalVisible(false);
                 }}
               >
@@ -254,11 +175,11 @@ export default function Profile() {
         </View>
       </Modal>
 
-      {/* Edit Contact Modal */}
-      <Modal visible={editContactModalVisible} transparent={true} animationType="fade">
+      {/* Edit Location Modal */}
+      <Modal visible={editLocationModalVisible} transparent={true} animationType="fade">
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }}>
           <View style={{ width: "80%", backgroundColor: "#FFF", borderRadius: 8, padding: 20 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 15 }}>Edit Contact</Text>
+            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 15 }}>Edit Location</Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -269,22 +190,21 @@ export default function Profile() {
                 marginBottom: 20,
                 fontSize: 14,
               }}
-              value={editContactValue}
-              onChangeText={setEditContactValue}
-              placeholder="Enter contact information"
+              value={editLocationValue}
+              onChangeText={setEditLocationValue}
+              placeholder="Enter location"
               multiline={true}
               numberOfLines={3}
-              keyboardType="phone-pad"
             />
             <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
-              <TouchableOpacity style={{ flex: 1, backgroundColor: "#E5E5E5", paddingVertical: 10, borderRadius: 4 }} onPress={() => setEditContactModalVisible(false)}>
+              <TouchableOpacity style={{ flex: 1, backgroundColor: "#E5E5E5", paddingVertical: 10, borderRadius: 4 }} onPress={() => setEditLocationModalVisible(false)}>
                 <Text style={{ textAlign: "center", fontWeight: "600" }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ flex: 1, backgroundColor: "#2D6BFF", paddingVertical: 10, borderRadius: 4 }}
                 onPress={() => {
-                  setContact(editContactValue);
-                  setEditContactModalVisible(false);
+                  setLocation(editLocationValue);
+                  setEditLocationModalVisible(false);
                 }}
               >
                 <Text style={{ textAlign: "center", fontWeight: "600", color: "#FFF" }}>Save</Text>
@@ -302,8 +222,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: 20,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 12,
   },
   profileContainer: {
     backgroundColor: colors.background.backgroundColor,
@@ -313,7 +234,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
+    flex: 1,
     textAlign: "center",
+  },
+  editBtn: {},
+  editBtnText: {
+    color: "#2D6BFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
   avatarContainer: {
     width: 100,
@@ -400,7 +328,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   infoLabelContainer: {
     flexDirection: "row",
@@ -486,17 +414,6 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  editBtn: {
-    backgroundColor: "#E5E5E5",
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  editBtnText: {
-    color: "#2D6BFF",
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
