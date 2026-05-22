@@ -104,9 +104,11 @@ public function index()
                 Storage::disk('public')->delete($service_center->foto_service_center);
             }
             
-            // Store the new image
+            // Store the new image (location endpoint /storage/service_centers/filename.jpg) and save the path in the database
             $path = $request->file('foto_service_center')->store('service_centers', 'public');
             $validated['foto_service_center'] = $path;
+
+            
         }
 
         $service_center->update($validated);
