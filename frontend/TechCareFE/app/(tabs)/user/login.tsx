@@ -1,10 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useState } from "react";
 import { router, useRouter } from "expo-router";
 import { EyeIcon } from "@/components/svg/EyeIcon";
 import { colors as defaultColor } from "@/styles/colors";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+
+const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 
 export function login() {
   const insets = useSafeAreaInsets();
@@ -16,7 +19,7 @@ export function login() {
   const getLoginData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -97,14 +100,6 @@ export function login() {
                 <Text style={styles.createAccountLink} onPress={() => router.push("/user/register")}>
                   Create an account
                 </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Partner Login */}
-            <View style={{ marginTop: 30, alignItems: "center" }}>
-              <Text style={{ color: "#fff", fontSize: 16 }}>Are you a technician?</Text>
-              <TouchableOpacity onPress={() => router.push("/mitra/login")}>
-                <Text style={styles.createAccountLink}>Login as Partner</Text>
               </TouchableOpacity>
             </View>
           </View>
