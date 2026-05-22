@@ -65,7 +65,7 @@ const MOCK_ORDERS: Order[] = [
   },
 ];
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 
 const mapBackendStatus = (status?: string | null): Order["status"] => {
   switch (status) {

@@ -4,8 +4,108 @@ import { MitraBottomNavigation } from "@/components/MitraBottomNavigation";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, TextInput } from "react-native";
 import { colors } from "@/styles/colors";
 import { DropdownIcon } from "@/components/svg/Dropdown";
+import { useFocusEffect, router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 export default function MitraProfile() {
+  const getAuthToken = async () => {
+    const storedToken = await AsyncStorage.getItem("authToken");
+    return storedToken?.trim() || null;
+  };
+
+  const getUserData = async () => {
+    const url = `${API_BASE_URL}/user`;
+    try {
+      setIsLoadingMitra(true);
+      const token = await getAuthToken();
+      if (!token) {
+        router.replace("./login");
+        return;
+      }
+
+      console.log("Fetching user data from:", url);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      const text = await response.text();
+      console.log("Profile response status:", response.status, "body:", text);
+
+      const trimmed = text ? String(text).trim() : "";
+      if (trimmed && (/<!doctype html/i.test(trimmed) || /<html/i.test(trimmed))) {
+        console.error("Received HTML when expecting JSON for profile:", trimmed.slice(0, 500));
+        alert(`Server returned HTML instead of JSON. Check the API URL:\n${url}\nOpen it in a browser to inspect the response.`);
+        return;
+      }
+
+      let json: any = null;
+      try {
+        json = trimmed ? JSON.parse(trimmed) : null;
+      } catch (parseErr) {
+        json = null;
+      }
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          await AsyncStorage.removeItem("authToken");
+          router.replace("./login");
+          return;
+        }
+
+        const message = (json && (json.message || json.error)) || text || `Request failed with status ${response.status}`;
+        Alert.alert("Failed to load profile", String(message));
+        return;
+      }
+
+      const payload = json || {};
+      const data = payload.data || payload || {};
+
+      setServiceCenterName((data && (data.name || data.nama)) || "-");
+      setLocation((data && (data.contact || data.phone || data.telepon)) || "-");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Error fetching user data:", message);
+      alert(`Failed to load profile: ${message}`);
+    } finally {
+      setIsLoadingMitra(false);
+    }
+  };
+
+  // Re-fetch when screen comes into focus (useful when returning to this screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      getUserData();
+    }, []),
+  );
+
+  const handleLogout = async () => {
+    try {
+      const token = await getAuthToken();
+
+      if (token) {
+        await fetch(`${API_BASE_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (error) {
+      // Continue local logout even if API logout fails
+      console.error("Error during logout:", error);
+    } finally {
+      await AsyncStorage.removeItem("authToken");
+      router.replace("/mitra/login");
+    }
+  };
+
   const logoutAlert = () => {
     Alert.alert(
       "Logout Confirmation",
@@ -18,21 +118,20 @@ export default function MitraProfile() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => {
-            // Handle actual logout logic here, such as clearing tokens or navigating to the login screen
-            console.log("User logged out");
-          },
+          onPress: handleLogout,
         },
       ],
       { cancelable: true },
     );
   };
-  const [serviceCenterName, setServiceCenterName] = React.useState("Elextra Komputer");
-  const [location, setLocation] = React.useState("5.1 km • Jl. A.P. Pettarani Ruko Diamond No. 3");
+  const [isLoadingMitra, setIsLoadingMitra] = React.useState(false);
+  const [serviceCenterName, setServiceCenterName] = React.useState("");
+  const [location, setLocation] = React.useState("");
   const [editNameModalVisible, setEditNameModalVisible] = React.useState(false);
   const [editLocationModalVisible, setEditLocationModalVisible] = React.useState(false);
   const [editNameValue, setEditNameValue] = React.useState("");
   const [editLocationValue, setEditLocationValue] = React.useState("");
+
   return (
     <View style={styles.profileContainer}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
@@ -69,7 +168,7 @@ export default function MitraProfile() {
             <View style={styles.infoHeader}>
               <View style={styles.infoLabelContainer}>
                 <MaterialCommunityIcons name="storefront" size={20} color="#2D6BFF" />
-                <Text style={styles.infoLabel}>Service center name</Text>
+                <Text style={styles.infoLabel}>Service Center Name</Text>
               </View>
               <TouchableOpacity style={styles.changeBtn}>
                 <Text
