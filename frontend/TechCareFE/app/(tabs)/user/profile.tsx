@@ -1,32 +1,65 @@
 import React from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { MitraBottomNavigation } from "@/components/MitraBottomNavigation";
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, TextInput } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, TextInput, RefreshControl } from "react-native";
 import { colors } from "@/styles/colors";
 import { router } from "expo-router";
+import { BackBtn } from "@/components/btn/back-btn";
+import { useFocusEffect } from "@react-navigation/native";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 
 export default function Profile() {
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);
+  const [userName, setUserName] = React.useState("");
+  const [contact, setContact] = React.useState("");
+  const [editNameModalVisible, setEditNameModalVisible] = React.useState(false);
+  const [editContactModalVisible, setEditContactModalVisible] = React.useState(false);
+  const [editNameValue, setEditNameValue] = React.useState("");
+  const [editContactValue, setEditContactValue] = React.useState("");
+
+  const getAuthToken = async () => {
+    const storedToken = await AsyncStorage.getItem("authToken");
+    return storedToken?.trim() || null;
+  };
+
   const getUserData = async () => {
+    const url = `${API_BASE_URL}/user`;
     try {
       setIsLoadingProfile(true);
-      const token = await AsyncStorage.getItem("authToken");
+      const token = await getAuthToken();
       if (!token) {
         router.replace("/user/login");
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/user`, {
+      console.log("Fetching user data from:", url);
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
       });
-      const json = await response.json();
+
+      const text = await response.text();
+      console.log("Profile response status:", response.status, "body:", text);
+
+      const trimmed = text ? String(text).trim() : "";
+      if (trimmed && (/<!doctype html/i.test(trimmed) || /<html/i.test(trimmed))) {
+        console.error("Received HTML when expecting JSON for profile:", trimmed.slice(0, 500));
+        alert(`Server returned HTML instead of JSON. Check the API URL:\n${url}\nOpen it in a browser to inspect the response.`);
+        return;
+      }
+
+      let json: any = null;
+      try {
+        json = trimmed ? JSON.parse(trimmed) : null;
+      } catch (parseErr) {
+        json = null;
+      }
+
       if (!response.ok) {
         if (response.status === 401) {
           await AsyncStorage.removeItem("authToken");
@@ -34,27 +67,35 @@ export default function Profile() {
           return;
         }
 
-        alert(json.message || "Failed to fetch user data. Please try again.");
+        const message = (json && (json.message || json.error)) || text || `Request failed with status ${response.status}`;
+        Alert.alert("Failed to load profile", String(message));
         return;
       }
 
-      setUserName(json.name || "-");
-      setContact(json.contact || "-");
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      alert("An error occurred while fetching user data. Please try again.");
+      const payload = json || {};
+      const data = payload.data || payload || {};
+
+      setUserName((data && (data.name || data.nama)) || "-");
+      setContact((data && (data.contact || data.phone || data.telepon)) || "-");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Error fetching user data:", message);
+      alert(`Failed to load profile: ${message}`);
     } finally {
       setIsLoadingProfile(false);
     }
   };
 
-  React.useEffect(() => {
-    getUserData();
-  }, []);
+  // Re-fetch when screen comes into focus (useful when returning to this screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      getUserData();
+    }, []),
+  );
 
   const handleLogout = async () => {
     try {
-      const token = await AsyncStorage.getItem("authToken");
+      const token = await getAuthToken();
 
       if (token) {
         await fetch(`${API_BASE_URL}/logout`, {
@@ -92,21 +133,13 @@ export default function Profile() {
       { cancelable: true },
     );
   };
-  const [userName, setUserName] = React.useState("");
-  const [contact, setContact] = React.useState("");
-  const [editNameModalVisible, setEditNameModalVisible] = React.useState(false);
-  const [editContactModalVisible, setEditContactModalVisible] = React.useState(false);
-  const [editNameValue, setEditNameValue] = React.useState("");
-  const [editContactValue, setEditContactValue] = React.useState("");
   return (
     <View style={styles.profileContainer}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }} refreshControl={<RefreshControl refreshing={isLoadingProfile} onRefresh={getUserData} />}>
         {/* TopBar */}
         <View style={styles.topBar}>
-          <Text style={styles.title}>My Service Center Profile</Text>
-          <TouchableOpacity style={styles.editBtn} onPress={logoutAlert}>
-            <Text style={styles.editBtnText}>Logout</Text>
-          </TouchableOpacity>
+          <BackBtn />
+          <Text style={styles.title}>My Profile</Text>
         </View>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar} />
@@ -176,6 +209,11 @@ export default function Profile() {
         <View style={styles.saveContainer}>
           <TouchableOpacity style={styles.saveBtn}>
             <Text style={styles.saveBtnText}>Save Changes</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.saveContainer}>
+          <TouchableOpacity style={styles.editBtn} onPress={logoutAlert}>
+            <Text style={styles.editBtnText}>Logout</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -265,7 +303,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     padding: 20,
-    gap: 12,
+    gap: 4,
   },
   profileContainer: {
     backgroundColor: colors.background.backgroundColor,
@@ -275,14 +313,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    flex: 1,
     textAlign: "center",
-  },
-  editBtn: {},
-  editBtnText: {
-    color: "#2D6BFF",
-    fontSize: 16,
-    fontWeight: "600",
   },
   avatarContainer: {
     width: 100,
@@ -455,6 +486,17 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  editBtn: {
+    backgroundColor: "#E5E5E5",
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  editBtnText: {
+    color: "#2D6BFF",
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
