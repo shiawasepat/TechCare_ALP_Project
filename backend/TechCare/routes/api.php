@@ -61,12 +61,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/service_centers/{service_center}', [Service_CenterController::class, 'update']);
     Route::delete('/service_centers/{service_center}', [Service_CenterController::class, 'destroy']);
 
-
+});
 
 // GLOBAL API ERROR HANDLER: Catch all undefined routes
 Route::fallback(function () {
     return response()->json([
         'message' => 'No route found for this endpoint. correct your URL gng'
     ], 404);
-});
 });

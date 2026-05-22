@@ -91,7 +91,7 @@ class PaymentController extends Controller
                         'metode_pembayaran' => $type,
                     ]
                 );
-                $order->update(['status_order' => 'in_progress']);
+                $order->update(['status_order' => 'completed']);
             } elseif ($transactionStatus == 'pending') {
                 $order->update(['status_order' => 'pending']);
             } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
