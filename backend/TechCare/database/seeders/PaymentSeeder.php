@@ -4,29 +4,30 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Payment;
-use App\Models\Order; // We need this to link the payment to a real order
+use App\Models\Order;
 
 class PaymentSeeder extends Seeder
 {
     public function run(): void
     {
-        // Search order id
-        $order1 = Order::find(1);
-        $order2 = Order::find(2);
+        // Load the order AND its related service so we can see the true price
+        $order1 = Order::with('service')->find(1);
+        $order2 = Order::with('service')->find(2);
 
-        // We use if() checks just in case the orders haven't been seeded yet!
-        if ($order1) {
+        if ($order1 && $order1->service) {
             Payment::create([
                 'id_order' => $order1->id_order,
-                'jumlah_pembayaran' => 150000.00,
-                'metode_pembayaran' => 'gopay', // Must be 'cash', 'ovo', 'gopay', or 'dana'
+                // Automatically grab the true catalog price!
+                'jumlah_pembayaran' => $order1->service->harga_service, 
+                'metode_pembayaran' => 'gopay',
             ]);
         }
 
-        if ($order2) {
+        if ($order2 && $order2->service) {
             Payment::create([
                 'id_order' => $order2->id_order,
-                'jumlah_pembayaran' => 55000.00,
+                // Automatically grab the true catalog price!
+                'jumlah_pembayaran' => $order2->service->harga_service,
                 'metode_pembayaran' => 'cash',
             ]);
         }
