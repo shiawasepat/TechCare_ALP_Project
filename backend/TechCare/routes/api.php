@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/service_centers', [Service_CenterController::class, 'store']);
     Route::put('/service_centers/{service_center}', [Service_CenterController::class, 'update']);
     Route::delete('/service_centers/{service_center}', [Service_CenterController::class, 'destroy']);
+    Route::get('/mitra/earnings/today', [OrderController::class, 'getTodayEarnings']);
 
 });
 
