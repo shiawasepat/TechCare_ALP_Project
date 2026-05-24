@@ -1,4 +1,4 @@
-import { Alert, Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing } from "react-native";
+import { Alert, Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing, ActivityIndicator } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,6 +47,7 @@ export function details() {
   const ratingValue = typeof params.rating === "string" ? Number(params.rating) : "";
   const [activeTab, setActiveTab] = useState("service");
   const [selectedService, setSelectedService] = useState("Please choose a service");
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState<ServiceListItem | null>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const transformDetailsData = (data: any) => {
     return {
@@ -77,7 +78,18 @@ export function details() {
   const ratingValueDisplay = typeof serviceData?.rating === "number" ? serviceData.rating : ratingValue;
 
   const handleContinue = () => {
-    router.push("../mockup/confirm");
+    router.push({
+      pathname: "./confirm",
+      params: {
+        service_center: String(serviceId),
+        service_center_name: serviceNameDisplay,
+        selected_service_id: selectedServiceDetails?.id_service ? String(selectedServiceDetails.id_service) : "",
+        selected_service_name: selectedServiceDetails?.name || selectedService,
+        selected_service_price: selectedServiceDetails?.price ? selectedServiceDetails.price.replace(/[^0-9]/g, "") : "",
+        selected_service_description: selectedServiceDetails?.description || "",
+        service_variant: selectedService === "Home Service" ? "Home Service" : selectedService === "Scheduled Service" ? "Scheduled Service" : "Scheduled Service",
+      },
+    });
   };
 
   const serviceCenterImages: Record<string, ImageSourcePropType> = {
@@ -222,9 +234,22 @@ export function details() {
         {/* Service Card */}
         {activeTab === "service" && (
           <View style={styles.contentContainer}>
-            {servicesList && servicesList.length > 0 ? (
+            {isLoading ? (
+              <View style={styles.loadingStateCard}>
+                <ActivityIndicator size="large" color={defaultColor.primary.backgroundColor} />
+                <Text style={styles.loadingStateTitle}>Loading services...</Text>
+                <Text style={styles.loadingStateText}>Fetching the services this center provides.</Text>
+              </View>
+            ) : servicesList && servicesList.length > 0 ? (
               servicesList.map((svc: any, idx: number) => (
-                <Pressable key={String(svc.id_service ?? idx)} onPress={() => setSelectedService(svc.name || "Service")} style={[styles.serviceCard, selectedService === svc.name && styles.serviceCardSelected]}>
+                <Pressable
+                  key={String(svc.id_service ?? idx)}
+                  onPress={() => {
+                    setSelectedService(svc.name || "Service");
+                    setSelectedServiceDetails(svc);
+                  }}
+                  style={[styles.serviceCard, selectedService === svc.name && styles.serviceCardSelected]}
+                >
                   <Text style={styles.serviceName}>{svc.name || `Service ${idx + 1}`}</Text>
                   {svc.price && <Text style={styles.servicePrice}>{svc.price}</Text>}
                   {svc.description && <Text style={styles.serviceDescription}>{svc.description}</Text>}
@@ -233,17 +258,33 @@ export function details() {
             ) : (
               // fallback static options
               <>
-                <Pressable onPress={() => setSelectedService("Home Service")} style={[styles.serviceCard, selectedService === "Home Service" && styles.serviceCardSelected]}>
-                  <Text style={styles.serviceName}>Home Service</Text>
-                  <Text style={styles.servicePrice}>Rp110.000</Text>
-                  <Text style={styles.serviceDescription}>Our expert technician will come to your location.</Text>
-                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setSelectedService("Home Service");
+                    setSelectedServiceDetails({
+                      id_service: "home-service",
+                      name: "Home Service",
+                      price: "Rp110.000",
+                      description: "Our expert technician will come to your location.",
+                      raw: { variant: "Home Service" },
+                    });
+                  }}
+                  style={[styles.serviceCard, selectedService === "Home Service" && styles.serviceCardSelected]}
+                ></Pressable>
 
-                <Pressable onPress={() => setSelectedService("Scheduled Service")} style={[styles.serviceCard, selectedService === "Scheduled Service" && styles.serviceCardSelected]}>
-                  <Text style={styles.serviceName}>Scheduled Service</Text>
-                  <Text style={styles.servicePrice}>Rp90.000</Text>
-                  <Text style={styles.serviceDescription}>Schedule your service in advance.</Text>
-                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setSelectedService("Scheduled Service");
+                    setSelectedServiceDetails({
+                      id_service: "scheduled-service",
+                      name: "Scheduled Service",
+                      price: "Rp90.000",
+                      description: "Schedule your service in advance.",
+                      raw: { variant: "Scheduled Service" },
+                    });
+                  }}
+                  style={[styles.serviceCard, selectedService === "Scheduled Service" && styles.serviceCardSelected]}
+                ></Pressable>
               </>
             )}
           </View>
@@ -397,6 +438,29 @@ const styles = StyleSheet.create({
   serviceDescription: {
     fontSize: 14,
     color: "#666",
+  },
+  loadingStateCard: {
+    backgroundColor: "#FFF",
+    borderWidth: 1.25,
+    borderColor: "#D6E4FF",
+    borderRadius: 12,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingStateTitle: {
+    marginTop: 14,
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  loadingStateText: {
+    marginTop: 6,
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
   },
   scheduleSection: {
     marginBottom: 20,
