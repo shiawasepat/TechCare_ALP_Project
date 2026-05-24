@@ -54,6 +54,10 @@ class Service_Center extends Model
         return $this->hasMany(Rating::class, 'id_service_center', 'id_service_center');
     }
 
+    public function technicians() {
+        return $this->hasMany(Technician::class, 'id_service_center', 'id_service_center');
+    }
+
 
 
 

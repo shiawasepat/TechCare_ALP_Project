@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
              RatingSeeder::class,
              ChatsSeeder::class,
              MessageSeeder::class,
+             TechnicianSeeder::class,
+             AdminSeeder::class,
         ]);
     }
 }

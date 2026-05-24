@@ -12,6 +12,7 @@ class Order extends Model
     protected $fillable = [
         'id_service',
         'id_user',
+        'id_technician',
         'tipe_order',         
         'waktu_reservasi',    
         'alamat_home_service',
