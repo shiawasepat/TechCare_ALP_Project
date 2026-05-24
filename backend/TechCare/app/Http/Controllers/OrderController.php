@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
+use Carbon\Carbon;
 
 class OrderController extends Controller
 {
@@ -116,6 +117,50 @@ public function store(Request $request)
             'order' => $order
         ], 200);
     }
+
+    public function getTodayEarnings(Request $request)
+{
+    // 1. Get the currently logged-in Mitra & their Service Center
+    $user = $request->user();
+    $serviceCenter = $user->serviceCenter; 
+
+    if (!$serviceCenter) {
+        return response()->json(['message' => 'Service center not found for this user.'], 404);
+    }
+
+    $today = Carbon::today();
+
+    // 2. Fetch only today's completed orders for this Mitra
+    $completedOrders = Order::whereHas('service', function ($query) use ($serviceCenter) {
+            $query->where('id_service_center', $serviceCenter->id_service_center); 
+        })
+        ->with('payment') 
+        ->where('status_order', 'completed')
+        ->whereDate('updated_at', $today) 
+        ->get();
+
+    // 3. Calculate total earnings
+    $totalEarnings = $completedOrders->sum(function ($order) {
+        return $order->payment ? $order->payment->jumlah_pembayaran : 0;
+    });
+
+    // 4. Calculate type breakdowns 
+    // Note: Change 'tipe_order' if your database column uses a different name (like 'jenis_order')
+    $homeServiceCount = $completedOrders->where('tipe_order', 'home_service')->count();
+    $reservasiCount = $completedOrders->where('tipe_order', 'reservasi')->count();
+
+    // 5. Return ONLY the aggregated dashboard metrics
+    return response()->json([
+        'message' => 'Today earnings summary fetched successfully',
+        'date' => $today->toDateString(),
+        'total_money_made' => $totalEarnings,
+        'total_completed_orders' => $completedOrders->count(),
+        'breakdown' => [
+            'home_service' => $homeServiceCount,
+            'reservasi' => $reservasiCount,
+        ]
+    ], 200);
+}
 
     /**
      * Remove the specified resource from storage.
