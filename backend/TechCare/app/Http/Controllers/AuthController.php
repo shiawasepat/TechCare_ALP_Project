@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
+
 class AuthController extends Controller
 {
     public function login(Request $request)
@@ -66,6 +67,34 @@ class AuthController extends Controller
         ]);
     }
 
+    public function loginTechnician(Request $request)
+    {
+        // 1. Validate the incoming request
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        // 2. Find the Technician by their email
+        $technician = \App\Models\Technician::where('email', $request->email)->first();
+
+        // 3. Check if Technician exists AND if the password matches
+        if (!$technician || !Hash::check($request->password, $technician->password)) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // 4. Create the Token
+        $token = $technician->createToken('technician-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Technician Login Successful',
+            'token' => $token,
+            'technician' => $technician
+        ], 200);
+    }
+
     public function me(Request $request)
     {
         return response()->json($request->user());
@@ -82,4 +111,7 @@ class AuthController extends Controller
             'message' => 'Logged out successfully'
         ], 200);
     }
+
+
+
 }

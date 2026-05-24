@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('id_service')->constrained('services', 'id_service');
             $table->foreignId('id_user')->constrained('users', 'id_user');
 
+            $table->foreignId('id_technician')->nullable()->constrained('technicians', 'id_technician')->onDelete('set null');
+
 
             $table->enum('tipe_order', ['reservasi', 'home_service'])->default('reservasi');
     

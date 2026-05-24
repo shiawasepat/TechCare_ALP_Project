@@ -32,6 +32,7 @@ Route::post('/mitras', [MitraController::class, 'store']); // not used for front
 //login
 Route::post('/login', [AuthController::class, 'login']); 
 Route::post('/mitra/login', [AuthController::class, 'loginMitra']);
+Route::post('/technician/login', [AuthController::class, 'loginTechnician']);
 
 
 // butuh token (protected routes)
@@ -56,11 +57,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/services/{service}', [ServiceController::class, 'update']); 
     Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
     Route::get('/mitra/orders', [OrderController::class, 'getMitraOrders']); 
-    Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+    Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus']); // so mitra can change the status of the order
     Route::post('/service_centers', [Service_CenterController::class, 'store']);
     Route::put('/service_centers/{service_center}', [Service_CenterController::class, 'update']);
     Route::delete('/service_centers/{service_center}', [Service_CenterController::class, 'destroy']);
     Route::get('/mitra/earnings/today', [OrderController::class, 'getTodayEarnings']);
+
+    // for technicians
+    Route::get('/technician/orders', [OrderController::class, 'getTechnicianOrders']); // Populates the 4 Tabs
+    Route::put('/technician/orders/{order}/claim', [OrderController::class, 'claimOrder']); // Slide button: pending -> in_progress
+    Route::put('/technician/orders/{order}/complete', [OrderController::class, 'completeOrder']); // Slide button: in_progress -> completed
 
 });
 

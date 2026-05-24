@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use Carbon\Carbon;
+use App\Models\Payment;
 
 class OrderController extends Controller
 {
@@ -118,7 +119,7 @@ public function store(Request $request)
         ], 200);
     }
 
-    public function getTodayEarnings(Request $request)
+public function getTodayEarnings(Request $request)
 {
     // 1. Get the currently logged-in Mitra & their Service Center
     $user = $request->user();
@@ -130,37 +131,134 @@ public function store(Request $request)
 
     $today = Carbon::today();
 
-    // 2. Fetch only today's completed orders for this Mitra
-    $completedOrders = Order::whereHas('service', function ($query) use ($serviceCenter) {
+    // 2. Fetch today's payments that belong to this Mitra's Service Center
+    // We use nested relationship querying: Payment -> belongsTo -> Order -> belongsTo -> Service
+    $payments = Payment::whereHas('order.service', function ($query) use ($serviceCenter) {
             $query->where('id_service_center', $serviceCenter->id_service_center); 
         })
-        ->with('payment') 
-        ->where('status_order', 'completed')
-        ->whereDate('updated_at', $today) 
+        ->with('order') // Eager load the order so we can see the 'tipe_order'
+        ->whereDate('created_at', $today) 
         ->get();
 
-    // 3. Calculate total earnings
-    $totalEarnings = $completedOrders->sum(function ($order) {
-        return $order->payment ? $order->payment->jumlah_pembayaran : 0;
-    });
+    // 3. Calculate total earnings directly from the payment rows
+    $totalEarnings = $payments->sum('jumlah_pembayaran');
 
-    // 4. Calculate type breakdowns 
-    // Note: Change 'tipe_order' if your database column uses a different name (like 'jenis_order')
-    $homeServiceCount = $completedOrders->where('tipe_order', 'home_service')->count();
-    $reservasiCount = $completedOrders->where('tipe_order', 'reservasi')->count();
+    // 4. Calculate type breakdowns by looking inside the related order
+    $homeServiceCount = $payments->where('order.tipe_order', 'home_service')->count();
+    $reservasiCount = $payments->where('order.tipe_order', 'reservasi')->count();
 
-    // 5. Return ONLY the aggregated dashboard metrics
+    // 5. Return the clean aggregated metrics
     return response()->json([
-        'message' => 'Today earnings summary fetched successfully',
+        'message' => 'Today earnings summary fetched successfully from payments history',
         'date' => $today->toDateString(),
         'total_money_made' => $totalEarnings,
-        'total_completed_orders' => $completedOrders->count(),
+        'total_transactions_today' => $payments->count(),
         'breakdown' => [
             'home_service' => $homeServiceCount,
             'reservasi' => $reservasiCount,
         ]
     ], 200);
 }
+
+    // untuk technician. look for orders that are still pending and unassigned (id_technician is null)
+    public function getTechnicianOrders(Request $request)
+    {
+        $technician = $request->user();
+        
+        // This will be 'New', 'in_progress', 'completed', or null (for ALL)
+        $requestedTab = $request->query('status'); 
+
+        // 1. Base query: only orders belonging to their specific workshop
+        $query = Order::with(['user:id_user,name', 'service:id_service,nama_service'])
+            ->whereHas('service', function ($q) use ($technician) {
+                $q->where('id_service_center', $technician->id_service_center);
+            });
+
+        // 2. Filter logic based on which Tab they clicked in React Native
+        if ($requestedTab === 'pending') {
+            // "New" Tab: Orders that are pending AND nobody has claimed them yet
+            $query->where('status_order', 'pending')
+                  ->whereNull('id_technician');
+                  
+        } elseif ($requestedTab === 'in_progress' || $requestedTab === 'completed') {
+            // "In Progress" & "Completed" Tabs: MUST be assigned to THIS specific technician
+            $query->where('status_order', $requestedTab)
+                  ->where('id_technician', $technician->id_technician);
+                  
+        } else {
+            // "ALL" Tab: Show the Pool (unassigned) + Their own assigned jobs
+            $query->where(function ($q) use ($technician) {
+                $q->whereNull('id_technician')
+                  ->orWhere('id_technician', $technician->id_technician);
+            });
+        }
+
+        $orders = $query->latest()->get();
+
+        return response()->json([
+            'message' => 'Technician orders fetched successfully',
+            'orders' => $orders
+        ], 200);
+    }
+
+    public function claimOrder(Request $request, Order $order)
+    {
+        $technician = $request->user();
+
+        // 1. Check if it's already taken or not pending
+        if ($order->status_order !== 'pending' || $order->id_technician !== null) {
+            return response()->json([
+                'message' => 'This order is no longer available or already claimed.'
+            ], 400);
+        }
+
+        // 2. Security: Ensure the order belongs to this technician's service center
+        if ($order->service->id_service_center !== $technician->id_service_center) {
+            return response()->json([
+                'message' => 'Unauthorized. This order belongs to a different service center.'
+            ], 403);
+        }
+
+        // 3. Update the database (Status + Technician ID)
+        $order->status_order = 'in_progress';
+        $order->id_technician = $technician->id_technician;
+        $order->save();
+
+        return response()->json([
+            'message' => 'Order claimed successfully!',
+            'order' => $order
+        ], 200);
+    }
+
+    public function completeOrder(Request $request, Order $order)
+    {
+        $technician = $request->user();
+
+        // 1. Security: Ensure THIS exact technician is the one who claimed it
+        if ($order->id_technician !== $technician->id_technician) {
+            return response()->json([
+                'message' => 'Unauthorized. You cannot complete an order claimed by someone else.'
+            ], 403);
+        }
+
+        // 2. Check if it is actually in progress
+        if ($order->status_order !== 'in_progress') {
+            return response()->json([
+                'message' => 'Only orders that are in_progress can be completed.'
+            ], 400);
+        }
+
+        // 3. Update the status
+        $order->status_order = 'completed';
+        $order->save();
+
+        return response()->json([
+            'message' => 'Order completed successfully!',
+            'order' => $order
+        ], 200);
+    }
+
+
 
     /**
      * Remove the specified resource from storage.
