@@ -2,6 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "@/styles/colors";
 
 export function MitraBottomNavigation() {
   const pathname = usePathname();
@@ -13,28 +14,28 @@ export function MitraBottomNavigation() {
     <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/order-view" as any)}>
         <View style={styles.bottomNavActiveIconWrap}>
-          <Feather name="home" size={22} color={isActiveRoute("/(tabs)/mitra/order-view") ? "#2D6BFF" : "#5B6170"} />
+          <Feather name="home" size={22} color={isActiveRoute("/mitra/order-view") ? colors.primary.backgroundColor : "#5B6170"} />
         </View>
-        <Text style={isActiveRoute("/(tabs)/mitra/order-view") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Home</Text>
-        {isActiveRoute("/(tabs)/mitra/order-view") ? <View style={styles.activeDot} /> : null}
+        <Text style={isActiveRoute("/mitra/order-view") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Home</Text>
+        {isActiveRoute("/mitra/order-view") ? <View style={styles.activeDot} /> : null}
+      </Pressable>
+
+      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/history")}>
+        <Feather name="clock" size={22} color={isActiveRoute("/mitra/history") ? colors.primary.backgroundColor : "#5B6170"} />
+        <Text style={isActiveRoute("/mitra/history") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>History</Text>
+        {isActiveRoute("/mitra/history") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
       <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/mitra-chat" as any)}>
-        <MaterialCommunityIcons name="chat-outline" size={22} color={isActiveRoute("/mitra/mitra-chat") ? "#2D6BFF" : "#5B6170"} />
+        <MaterialCommunityIcons name="chat-outline" size={22} color={isActiveRoute("/mitra/mitra-chat") ? colors.primary.backgroundColor : "#5B6170"} />
         <Text style={isActiveRoute("/mitra/mitra-chat") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Chat</Text>
         {isActiveRoute("/mitra/mitra-chat") ? <View style={styles.activeDot} /> : null}
       </Pressable>
 
-      {/* <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/history")}>
-        <Feather name="clock" size={22} color={isActiveRoute("/mitra/history") ? "#2D6BFF" : "#5B6170"} />
-        <Text style={isActiveRoute("/mitra/history") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>History</Text>
-        {isActiveRoute("/mitra/history") ? <View style={styles.activeDot} /> : null}
-      </Pressable> */}
-
-      <Pressable style={styles.bottomNavItem} onPress={() => router.push("./profile")}>
-        <Feather name="user" size={22} color={isActiveRoute("./profile") ? "#2D6BFF" : "#5B6170"} />
-        <Text style={isActiveRoute("./profile") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Profile</Text>
-        {isActiveRoute("./profile") ? <View style={styles.activeDot} /> : null}
+      <Pressable style={styles.bottomNavItem} onPress={() => router.push("/mitra/profile")}>
+        <Feather name="user" size={22} color={isActiveRoute("/mitra/profile") ? colors.primary.backgroundColor : "#5B6170"} />
+        <Text style={isActiveRoute("/mitra/profile") ? styles.bottomNavLabelActive : styles.bottomNavLabel}>Profile</Text>
+        {isActiveRoute("/mitra/profile") ? <View style={styles.activeDot} /> : null}
       </Pressable>
     </View>
   );
