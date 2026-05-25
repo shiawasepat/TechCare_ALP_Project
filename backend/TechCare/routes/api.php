@@ -62,6 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/service_centers/{service_center}', [Service_CenterController::class, 'update']);
     Route::delete('/service_centers/{service_center}', [Service_CenterController::class, 'destroy']);
     Route::get('/mitra/earnings/today', [OrderController::class, 'getTodayEarnings']);
+    Route::get('/mitra/my-service-center', [Service_CenterController::class, 'myProfile']);
+    Route::patch('/mitra/my-service-center', [Service_CenterController::class, 'updateProfile']);
 
     // for technicians
     Route::get('/technician/orders', [OrderController::class, 'getTechnicianOrders']); // Populates the 4 Tabs
