@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('name_service_center');
             $table->string('deskripsi_service_center');
             $table->string('lokasi_service_center');
+            $table->time('open_time')->nullable();
+            $table->time('close_time')->nullable();
             $table->enum('status_service_center', ['buka', 'tutup'])-> default('buka');
             $table->string('foto_service_center')->nullable();
             $table->timestamps();

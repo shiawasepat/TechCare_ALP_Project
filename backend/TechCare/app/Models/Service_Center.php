@@ -31,6 +31,8 @@ class Service_Center extends Model
         'jarak_service_center',
         'status_service_center',
         'foto_service_center',
+        'open_time',  
+        'close_time', 
 
     ];
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Service_Center;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class Service_CenterController extends Controller
 {
@@ -30,6 +31,63 @@ public function index()
         return response()->json([
             'message' => 'Service Centers retrieved successfully',
             'service_centers' => $service_centers
+        ]);
+    }
+
+    /**
+     * Get the authenticated Mitra's Service Center Profile
+     */
+    public function myProfile(Request $request)
+    {
+        // 1. Find the service center belonging to the logged-in Mitra token
+        $service_center = Service_Center::where('id_mitra', $request->user()->id_mitra)->first();
+        
+
+        if (!$service_center) {
+            return response()->json(['message' => 'Service Center profile not found.'], 404);
+        }
+
+        // 2. Dynamic Time Checking Logic
+        if ($service_center->open_time && $service_center->close_time) {
+            $now = Carbon::now();
+            
+            // Convert the DB strings ("10:00") into actual Time Objects for accurate math
+            $openTime = Carbon::parse($service_center->open_time);
+            $closeTime = Carbon::parse($service_center->close_time);
+            
+            $isOpen = false;
+            
+            if ($openTime->lessThan($closeTime)) {
+                $isOpen = $now->between($openTime, $closeTime);
+            } 
+            else {
+                $isOpen = $now->greaterThanOrEqualTo($openTime) || $now->lessThanOrEqualTo($closeTime);
+            }
+
+
+
+
+            $calculatedStatus = $isOpen ? 'buka' : 'tutup';
+
+            // Auto-update database if the status shifted since last check
+            if ($service_center->status_service_center !== $calculatedStatus) {
+                $service_center->status_service_center = $calculatedStatus;
+                $service_center->save();
+            }
+        }
+
+        // 4. Return the required data
+        return response()->json([
+            'message' => 'Profile retrieved successfully',
+            'service_center' => [
+                'id_service_center' => $service_center->id_service_center,
+                'name_service_center' => $service_center->name_service_center,
+                'status_service_center' => $service_center->status_service_center,
+                'lokasi_service_center' => $service_center->lokasi_service_center,
+                'open_time' => $service_center->open_time,
+                'close_time' => $service_center->close_time,
+                'foto_service_center' => $service_center->foto_service_center ? url('storage/' . $service_center->foto_service_center) : null,
+            ]
         ]);
     }
 
@@ -81,9 +139,9 @@ public function index()
 /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Service_Center $service_center)
+public function update(Request $request, Service_Center $service_center)
     {
-        // SECURITY CHECK: Does this Mitra own this Service Center?
+        // SECURITY CHECK
         if ($service_center->id_mitra !== $request->user()->id_mitra) {
             return response()->json([
                 'message' => 'Forbidden. You cannot modify a service center that does not belong to you.'
@@ -92,29 +150,75 @@ public function index()
 
         $validated = $request->validate([
             'name_service_center' => 'sometimes|required|string|max:64',
+            'lokasi_service_center' => 'sometimes|required|string|max:255', 
             'deskripsi_service_center' => 'sometimes|required|string|max:255',
-            'jarak_service_center' => 'sometimes|required|float|min:0',
-            'status_service_center' => 'sometimes|required|in:buka,tutup',
+            'jarak_service_center' => 'sometimes|required|numeric|min:0',
+            'open_time' => 'sometimes|required|date_format:H:i',  
+            'close_time' => 'sometimes|required|date_format:H:i', 
             'foto_service_center' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         if ($request->hasFile('foto_service_center')) {
-            // Delete the old image from the server so you don't waste storage space
             if ($service_center->foto_service_center) {
                 Storage::disk('public')->delete($service_center->foto_service_center);
             }
-            
-            // Store the new image (location endpoint /storage/service_centers/filename.jpg) and save the path in the database
             $path = $request->file('foto_service_center')->store('service_centers', 'public');
             $validated['foto_service_center'] = $path;
-
-            
         }
 
         $service_center->update($validated);
+        
         return response()->json([
             'message' => 'Service Center updated successfully',
             'service_center' => $service_center
+        ]);
+    }
+
+/**
+     * Update the authenticated Mitra's Service Center Profile
+     */
+    public function updateProfile(Request $request)
+    {
+        // 1. Find the shop belonging to this specific token
+        $service_center = Service_Center::where('id_mitra', $request->user()->id_mitra)->first();
+
+        if (!$service_center) {
+            return response()->json(['message' => 'Service Center profile not found.'], 404);
+        }
+
+        // 2. Validate incoming data (using 'sometimes' so they can update just one field if they want)
+        $validated = $request->validate([
+            'name_service_center' => 'sometimes|required|string|max:64',
+            'lokasi_service_center' => 'sometimes|required|string|max:255',
+            'deskripsi_service_center' => 'sometimes|required|string|max:255',
+            'open_time' => 'sometimes|required|date_format:H:i',  // Validates standard 24h format like "10:00"
+            'close_time' => 'sometimes|required|date_format:H:i', // Validates standard 24h format like "22:00"
+            'foto_service_center' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        // 3. Handle image replacement if a new image is uploaded
+        if ($request->hasFile('foto_service_center')) {
+            if ($service_center->foto_service_center) {
+                Storage::disk('public')->delete($service_center->foto_service_center);
+            }
+            $path = $request->file('foto_service_center')->store('service_centers', 'public');
+            $validated['foto_service_center'] = $path;
+        }
+
+        // 4. Update the database record
+        $service_center->update($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully!',
+            'service_center' => [
+                'id_service_center' => $service_center->id_service_center,
+                'name_service_center' => $service_center->name_service_center,
+                'status_service_center' => $service_center->status_service_center,
+                'lokasi_service_center' => $service_center->lokasi_service_center,
+                'open_time' => $service_center->open_time,
+                'close_time' => $service_center->close_time,
+                'foto_service_center' => $service_center->foto_service_center ? url('storage/' . $service_center->foto_service_center) : null,
+            ]
         ]);
     }
 
