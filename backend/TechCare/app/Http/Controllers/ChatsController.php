@@ -62,6 +62,9 @@ class ChatsController extends Controller
         // Load the sender info right away so the frontend can display it instantly
         $message->load('sender');
 
+        //broadcast for websocket
+        broadcast(new \App\Events\MessageSent($message))->toOthers();
+
         return response()->json([
             'message' => 'Message sent successfully',
             'data' => $message
