@@ -128,7 +128,13 @@ public function index()
      */
     public function show(Service_Center $service_center)
     {
-        $service_center->load('ratings', 'services');
+        $service_center->load('ratings', 'services')
+            ->loadCount('ratings')
+            ->loadAvg('ratings', 'nilai_rating');
+
+        $service_center->ratings_avg_nilai_rating = $service_center->ratings_avg_nilai_rating
+            ? round($service_center->ratings_avg_nilai_rating, 1)
+            : 0.0;
 
         return response()->json($service_center);
     }

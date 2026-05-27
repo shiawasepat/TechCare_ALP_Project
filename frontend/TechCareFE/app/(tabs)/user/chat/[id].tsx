@@ -1,10 +1,13 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Alert, Pressable, StatusBar, StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from "react-native";
+import { Alert, Pressable, StatusBar, StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import storeImages from "../storeImages";
 import BackButtonHeader from "@/components/BackButtonHeader";
 import { useEffect, useState, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@/constants/api";
+import { getEcho } from "@/utils/realtime";
 
 type Message = {
   id: string;
@@ -31,7 +34,7 @@ const conversationPresets: Record<string, ConversationPreset> = {
   "Mugen Computer Pettarani": {
     subtitle: "Usually replies in a few minutes",
     online: true,
-    quickReplies: ["Please update me", "Is the technician nearby?", "What is the ETA?"] ,
+    quickReplies: ["Please update me", "Is the technician nearby?", "What is the ETA?"],
     initialMessages: [
       { id: "2", text: "The technician is on the way and should arrive soon.", role: "agent", time: "08:44" },
       { id: "1", text: "Thanks, please keep me posted if there is any delay.", role: "user", time: "08:46", seen: false },
@@ -71,16 +74,17 @@ export default function ChatConversation() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; name?: string }>();
   const name = typeof params.name === "string" && params.name.length > 0 ? params.name : "Service Center";
+  const orderId = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
   const preset = conversationPresets[name] ?? defaultPreset;
   const insets = useSafeAreaInsets();
   const avatarSource = (() => {
     const key = Object.keys(storeImages).find((k) => k.toLowerCase().includes(String(name).toLowerCase()));
     return (storeImages as any)[name] || (key ? (storeImages as any)[key] : undefined) || require("../../../../assets/Google.jpg");
   })();
-  const [messages, setMessages] = useState<ConversationEntry[]>(preset.initialMessages);
+  const [messages, setMessages] = useState<ConversationEntry[]>([]);
+  const [chatId, setChatId] = useState<number | null>(null);
   const [input, setInput] = useState("");
   const [showQuick, setShowQuick] = useState(true);
-  const [isSeen, setIsSeen] = useState(false);
   const listRef = useRef<FlatList>(null);
 
   const quickReplies = preset.quickReplies;
@@ -90,12 +94,151 @@ export default function ChatConversation() {
     return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   };
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
-    const msg: ConversationEntry = { id: Date.now().toString(), text: text.trim(), role: "user", time: formatNow(), seen: isSeen };
-    setMessages((m) => [...m, msg]);
-    setInput("");
+  const formatTime = (value?: string) => {
+    if (!value) return formatNow();
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return formatNow();
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  };
+
+  const toTimestamp = (value?: string) => {
+    if (!value) return 0;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  };
+
+  const isUserSender = (senderType?: string) => {
+    if (!senderType) return false;
+    return senderType.toLowerCase().includes("user");
+  };
+
+  const normalizeMessage = (message: any): ConversationEntry => {
+    const role: "user" | "agent" = isUserSender(message?.sender_type) ? "user" : "agent";
+    return {
+      id: String(message?.id_message ?? message?.id ?? Date.now()),
+      text: String(message?.pesan ?? message?.text ?? ""),
+      role,
+      time: formatTime(message?.created_at),
+      seen: role === "user" ? true : undefined,
+    };
+  };
+
+  const appendMessage = (message: ConversationEntry) => {
+    setMessages((current) => {
+      if (current.some((item) => item.id === message.id)) {
+        return current;
+      }
+      return [...current, message];
+    });
+  };
+
+  const scrollToEnd = () => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true } as any), 100);
+  };
+
+  const getAuthToken = async () => {
+    const token = (await AsyncStorage.getItem("authToken"))?.trim();
+    if (!token) {
+      Alert.alert("Login required", "Please log in again to access chat.");
+      return null;
+    }
+    return token;
+  };
+
+  const loadChat = async () => {
+    if (!orderId) {
+      return;
+    }
+    if (!API_BASE_URL) {
+      Alert.alert("Missing API base URL", "Set EXPO_PUBLIC_API_BASE_URL in your environment.");
+      return;
+    }
+    const token = await getAuthToken();
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/chat`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to load chat (${response.status})`);
+      }
+      const payload = await response.json();
+      const chat = payload?.chat;
+      if (chat?.id_chats) {
+        setChatId(chat.id_chats);
+      }
+      const rawMessages = Array.isArray(chat?.messages) ? chat.messages : [];
+      const sorted = [...rawMessages].sort((a, b) => toTimestamp(a?.created_at) - toTimestamp(b?.created_at));
+      setMessages(sorted.map(normalizeMessage));
+    } catch (error) {
+      Alert.alert("Unable to load chat", "Please try again later.");
+    }
+  };
+
+  const sendMessage = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || !orderId) return;
+    if (!API_BASE_URL) {
+      Alert.alert("Missing API base URL", "Set EXPO_PUBLIC_API_BASE_URL in your environment.");
+      return;
+    }
+    const token = await getAuthToken();
+    if (!token) return;
+    const echo = await getEcho();
+    const socketId = typeof echo?.socketId === "function" ? echo.socketId() : undefined;
+
+    const tempId = `temp-${Date.now()}`;
+    const localMessage: ConversationEntry = {
+      id: tempId,
+      text: trimmed,
+      role: "user",
+      time: formatNow(),
+      seen: true,
+    };
+
+    setInput("");
+    appendMessage(localMessage);
+    scrollToEnd();
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/chat`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...(socketId ? { "X-Socket-ID": socketId } : {}),
+        },
+        body: JSON.stringify({ pesan: trimmed }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message (${response.status})`);
+      }
+
+      const payload = await response.json();
+      const serverMessage = normalizeMessage(payload?.data ?? payload);
+      if (payload?.data?.id_chats && !chatId) {
+        setChatId(payload.data.id_chats);
+      }
+      setMessages((current) => {
+        const updated = current.map((message) =>
+          message.id === tempId ? { ...serverMessage, role: "user", seen: true } : message
+        );
+        const seen = new Set<string>();
+        return updated.filter((message) => {
+          if (seen.has(message.id)) return false;
+          seen.add(message.id);
+          return true;
+        });
+      });
+    } catch (error) {
+      setMessages((current) => current.filter((message) => message.id !== tempId));
+      Alert.alert("Send failed", "Message could not be sent. Please try again.");
+    }
   };
 
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -112,20 +255,6 @@ export default function ChatConversation() {
   const handleAddImage = () => {
     setShowAddMenu(false);
     Alert.alert("Upload image", "Function not yet implemented.");
-  };
-
-  const markLastUserMessageSeen = () => {
-    setMessages((current) => {
-      const next = [...current];
-      for (let index = next.length - 1; index >= 0; index -= 1) {
-        if (next[index].role === "user" && !next[index].deletedMode) {
-          next[index] = { ...next[index], seen: true };
-          break;
-        }
-      }
-      return next;
-    });
-    setIsSeen(true);
   };
 
   const deleteMessage = (messageId: string, mode: DeletedMode) => {
@@ -157,7 +286,7 @@ export default function ChatConversation() {
     ]);
   };
 
-  const renderItem = ({ item }: { item: Message }) => {
+  const renderItem = ({ item }: { item: ConversationEntry }) => {
     const isUser = item.role === "user";
     const seen = isUser ? Boolean(item.seen) : false;
     const deletedForMe = (item as ConversationEntry).deletedMode === "me";
@@ -184,8 +313,42 @@ export default function ChatConversation() {
   };
 
   useEffect(() => {
-    markLastUserMessageSeen();
-  }, []);
+    loadChat();
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!chatId) return;
+    let active = true;
+    let echo: Awaited<ReturnType<typeof getEcho>> | null = null;
+
+    const connect = async () => {
+      const instance = await getEcho();
+      if (!instance || !active) return;
+      echo = instance;
+      const channel = instance.private(`chat.${chatId}`);
+      channel.listen("MessageSent", (event: any) => {
+        const incoming = event?.message;
+        if (!incoming) return;
+        appendMessage(normalizeMessage(incoming));
+        scrollToEnd();
+      });
+    };
+
+    connect();
+
+    return () => {
+      active = false;
+      if (echo) {
+        echo.leave(`chat.${chatId}`);
+      }
+    };
+  }, [chatId]);
+
+  useEffect(() => {
+    if (messages.length) {
+      scrollToEnd();
+    }
+  }, [messages.length]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -203,7 +366,7 @@ export default function ChatConversation() {
       />
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
-        <View style={[styles.quickContainer, { paddingBottom: insets.bottom || 16 }]}> 
+        <View style={[styles.quickContainer, { paddingBottom: insets.bottom || 16 }]}>
           <TouchableOpacity style={styles.quickHeader} onPress={() => setShowQuick((s) => !s)}>
             <MaterialCommunityIcons name="plus-box" size={18} color="#2D6BFF" />
             <Text style={styles.quickHeaderText}>Fast reply</Text>
@@ -213,7 +376,7 @@ export default function ChatConversation() {
           {showQuick && (
             <View style={styles.quickList}>
               {quickReplies.map((q) => (
-                <TouchableOpacity key={q} style={styles.quickButton} onPress={() => sendMessage(q)}>
+                <TouchableOpacity key={q} style={styles.quickButton} onPress={() => void sendMessage(q)}>
                   <Text style={styles.quickButtonText}>{q}</Text>
                 </TouchableOpacity>
               ))}
@@ -239,8 +402,8 @@ export default function ChatConversation() {
               <TouchableOpacity style={styles.addBtn} onPress={openAddMenu}>
                 <Feather name="plus" size={20} color="#6B7280" />
               </TouchableOpacity>
-              <TextInput placeholder="Type a message" value={input} onChangeText={setInput} style={styles.input} onSubmitEditing={() => sendMessage(input)} />
-              <TouchableOpacity style={styles.sendBtn} onPress={() => sendMessage(input)}>
+              <TextInput placeholder="Type a message" value={input} onChangeText={setInput} style={styles.input} onSubmitEditing={() => void sendMessage(input)} />
+              <TouchableOpacity style={styles.sendBtn} onPress={() => void sendMessage(input)}>
                 <Feather name="send" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
