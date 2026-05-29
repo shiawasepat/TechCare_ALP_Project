@@ -4,10 +4,9 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, TextInput, RefreshControl } from "react-native";
 import { colors } from "@/styles/colors";
 import { router } from "expo-router";
+import { API_BASE_URL } from "@/constants/api";
 import { BackBtn } from "@/components/btn/back-btn";
 import { useFocusEffect } from "@react-navigation/native";
-
-const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 
 export default function Profile() {
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);

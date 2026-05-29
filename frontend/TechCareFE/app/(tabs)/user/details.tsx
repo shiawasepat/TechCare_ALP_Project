@@ -10,6 +10,7 @@ import { StarIcon } from "@/components/svg/Star";
 import { ServiceIcon } from "@/components/svg/Service";
 import { ClockIcon } from "@/components/svg/Clock";
 import { CheckIcon } from "@/components/svg/Check";
+import { API_BASE_URL } from "@/constants/api";
 
 type ServiceCenterDetails = {
   id_service_center: number;
@@ -31,8 +32,6 @@ type ServiceListItem = {
 };
 
 export function details() {
-  const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
-
   const [isLoading, setIsLoading] = useState(false);
   const [serviceData, setServiceData] = useState<any | null>(null);
   const [servicesList, setServicesList] = useState<any[]>([]);

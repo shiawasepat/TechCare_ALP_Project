@@ -1,15 +1,105 @@
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BackButtonHeader from "@/components/BackButtonHeader";
-import { historyItems, getHistoryItemById } from "../historyData";
+import { fetchHistoryItems, findHistoryItemById, historyItems as fallbackHistoryItems, HistoryItem } from "../historyData";
+
+const getStatusPalette = (status: string) => {
+	const normalizedStatus = status.toLowerCase();
+
+	if (normalizedStatus.includes("cancel")) {
+		return { backgroundColor: "#FEE2E2", textColor: "#DC2626" };
+	}
+
+	if (normalizedStatus.includes("complete")) {
+		return { backgroundColor: "#DCFCE7", textColor: "#16A34A" };
+	}
+
+	if (normalizedStatus.includes("progress") || normalizedStatus.includes("waiting")) {
+		return { backgroundColor: "#E0EBFF", textColor: "#2D6BFF" };
+	}
+
+	return { backgroundColor: "#EEF2FF", textColor: "#4F46E5" };
+};
 
 export default function HistoryDetailScreen() {
 	const router = useRouter();
 	const params = useLocalSearchParams<{ id?: string }>();
-	const historyItem = getHistoryItemById(typeof params.id === "string" ? params.id : undefined);
+	const historyId = typeof params.id === "string" ? params.id : undefined;
+	const [historyItem, setHistoryItem] = useState<HistoryItem | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+	useEffect(() => {
+		let isActive = true;
+
+		const loadHistoryItem = async () => {
+			setIsLoading(true);
+			setErrorMessage(null);
+
+			try {
+				const result = await fetchHistoryItems();
+				const resolvedItem = findHistoryItemById(result.items, historyId) ?? findHistoryItemById(fallbackHistoryItems, historyId) ?? null;
+
+				if (!isActive) {
+					return;
+				}
+
+				if (!resolvedItem) {
+					setHistoryItem(null);
+					setErrorMessage("History item not found.");
+					return;
+				}
+
+				setHistoryItem(resolvedItem);
+			} finally {
+				if (isActive) {
+					setIsLoading(false);
+				}
+			}
+		};
+
+		void loadHistoryItem();
+
+		return () => {
+			isActive = false;
+		};
+	}, [historyId]);
+
+	if (isLoading) {
+		return (
+			<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+				<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
+				<BackButtonHeader title="History Detail" subtitle="Loading..." onBack={() => router.back()} />
+
+				<View style={styles.stateCard}>
+					<ActivityIndicator color="#2D6BFF" />
+					<Text style={styles.stateText}>Loading history details...</Text>
+				</View>
+			</SafeAreaView>
+		);
+	}
+
+	if (!historyItem) {
+		return (
+			<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+				<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
+				<BackButtonHeader title="History Detail" subtitle="Not found" onBack={() => router.back()} />
+
+				<View style={styles.stateCard}>
+					<Text style={styles.stateText}>{errorMessage || "History item not found."}</Text>
+					<Pressable style={styles.stateButton} onPress={() => router.back()}>
+						<Text style={styles.stateButtonText}>Go Back</Text>
+					</Pressable>
+				</View>
+			</SafeAreaView>
+		);
+	}
+
+	const statusPalette = getStatusPalette(historyItem.status);
 
 	return (
 		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -26,8 +116,8 @@ export default function HistoryDetailScreen() {
 							<Text style={styles.serviceTitle}>{historyItem.title}</Text>
 							<Text style={styles.serviceSubtitle}>{historyItem.serviceType}</Text>
 						</View>
-						<View style={styles.statusPill}>
-							<Text style={styles.statusPillText}>{historyItem.status}</Text>
+						<View style={[styles.statusPill, { backgroundColor: statusPalette.backgroundColor }]}>
+							<Text style={[styles.statusPillText, { color: statusPalette.textColor }]}>{historyItem.status}</Text>
 						</View>
 					</View>
 
@@ -96,6 +186,38 @@ const styles = StyleSheet.create({
 		paddingTop: 14,
 		paddingBottom: 28,
 		gap: 14,
+	},
+	stateCard: {
+		marginTop: 14,
+		marginHorizontal: 20,
+		backgroundColor: "#FFFFFF",
+		borderRadius: 24,
+		padding: 20,
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 12,
+		shadowColor: "#D8E1EF",
+		shadowOpacity: 0.18,
+		shadowRadius: 12,
+		shadowOffset: { width: 0, height: 4 },
+		elevation: 1,
+	},
+	stateText: {
+		fontSize: 13.5,
+		color: "#374151",
+		fontWeight: "600",
+		textAlign: "center",
+	},
+	stateButton: {
+		backgroundColor: "#2D6BFF",
+		paddingHorizontal: 16,
+		paddingVertical: 10,
+		borderRadius: 999,
+	},
+	stateButtonText: {
+		fontSize: 13,
+		fontWeight: "700",
+		color: "#FFFFFF",
 	},
 	summaryCard: {
 		backgroundColor: "#FFFFFF",

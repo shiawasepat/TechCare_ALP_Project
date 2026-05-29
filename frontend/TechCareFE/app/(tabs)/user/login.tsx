@@ -1,13 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
 import { Image, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useState } from "react";
-import { router, useRouter } from "expo-router";
+import { router } from "expo-router";
 import { EyeIcon } from "@/components/svg/EyeIcon";
+import { API_BASE_URL } from "@/constants/api";
 import { colors as defaultColor } from "@/styles/colors";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-
-const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 
 export function login() {
   const insets = useSafeAreaInsets();

@@ -225,8 +225,14 @@ export default function ChatConversation() {
         setChatId(payload.data.id_chats);
       }
       setMessages((current) => {
+        const restoredMessage: ConversationEntry = {
+          ...serverMessage,
+          role: "user",
+          seen: true,
+        };
+
         const updated = current.map((message) =>
-          message.id === tempId ? { ...serverMessage, role: "user", seen: true } : message
+          message.id === tempId ? restoredMessage : message
         );
         const seen = new Set<string>();
         return updated.filter((message) => {

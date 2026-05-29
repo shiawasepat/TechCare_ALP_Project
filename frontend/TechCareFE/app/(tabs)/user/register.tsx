@@ -1,5 +1,6 @@
 import { colors as defaultColor } from "@/styles/colors";
 import { EyeIcon } from "@/components/svg/EyeIcon";
+import { API_BASE_URL } from "@/constants/api";
 import { Image, View, Text, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -26,7 +27,7 @@ export function register() {
       return;
     }
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/users", {
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
