@@ -5,6 +5,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, Text
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BackButtonHeader from "@/components/BackButtonHeader";
+import { API_BASE_URL } from "@/constants/api";
 
 type ServiceVariant = "Home Service" | "Scheduled Service";
 
@@ -15,7 +16,6 @@ type ServiceOption = {
   description: string;
 };
 
-const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
 const SHIPPING_COST = 10000;
 const PLATFORM_FEE = 2500;
 const DEFAULT_HOME_PRICE = 110000;
@@ -65,7 +65,7 @@ export default function Scheduled() {
   const [serviceOptions, setServiceOptions] = useState<ServiceOption[]>([]);
   const [selectedServiceName, setSelectedServiceName] = useState(initialServiceName);
   const [selectedServicePrice, setSelectedServicePrice] = useState(initialServicePrice || (initialVariant === "Home Service" ? DEFAULT_HOME_PRICE : DEFAULT_SCHEDULED_PRICE));
-  const [selectedServiceDescription, setSelectedServiceDescription] = useState(initialServiceDescription || "Periksa detail sebelum melanjutkan");
+  const [selectedServiceDescription, setSelectedServiceDescription] = useState(initialServiceDescription || "Review details before continuing");
   const [serviceVariant, setServiceVariant] = useState<ServiceVariant>(initialVariant);
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState("");
@@ -167,8 +167,8 @@ export default function Scheduled() {
               <Feather name="clipboard" size={20} color="#2D6BFF" />
             </View>
             <View style={styles.summaryTextWrap}>
-              <Text style={styles.cardTitle}>Ringkasan Pesanan</Text>
-              <Text style={styles.cardSubtitle}>Periksa detail sebelum melanjutkan</Text>
+              <Text style={styles.cardTitle}>Order summary</Text>
+              <Text style={styles.cardSubtitle}>Review details before continuing</Text>
             </View>
             <View style={styles.statusPill}>
               <Text style={styles.statusPillText}>{serviceVariant}</Text>
@@ -178,13 +178,13 @@ export default function Scheduled() {
           <View style={styles.serviceCard}>
             <View style={styles.serviceDetails}>
               <Text style={styles.serviceItemName}>{displayServiceName}</Text>
-              <Text style={styles.serviceItemDesc}>{selectedServiceDescription || "Periksa detail sebelum melanjutkan"}</Text>
-              <Text style={styles.serviceMeta}>Qty {quantity} · Estimasi 2-3 hours</Text>
+              <Text style={styles.serviceItemDesc}>{selectedServiceDescription || "Review details before continuing"}</Text>
+              <Text style={styles.serviceMeta}>Qty {quantity} · Est. 2-3 hours</Text>
             </View>
             <View style={styles.priceContainer}>
               <Text style={styles.servicePrice}>Rp{selectedServicePrice.toLocaleString("id-ID")}</Text>
               <TouchableOpacity style={styles.editChip} onPress={() => setIsCustomizeModalVisible(true)}>
-                <Text style={styles.editChipText}>Ubah</Text>
+                <Text style={styles.editChipText}>Edit</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -202,34 +202,34 @@ export default function Scheduled() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Pricing breakdown</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Subtotal (Pajak sudah termasuk)</Text>
+            <Text style={styles.priceLabel}>Subtotal (Tax included)</Text>
             <Text style={styles.priceValue}>Rp{subtotal.toLocaleString("id-ID")}</Text>
           </View>
           {isHomeService ? (
             <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Biaya Ongkir</Text>
+              <Text style={styles.priceLabel}>Shipping cost</Text>
               <Text style={styles.priceValue}>Rp{SHIPPING_COST.toLocaleString("id-ID")}</Text>
             </View>
           ) : null}
           <View style={styles.priceRowLast}>
-            <Text style={styles.priceLabel}>Biaya Platform</Text>
+            <Text style={styles.priceLabel}>Platform fee</Text>
             <Text style={styles.priceValue}>Rp{PLATFORM_FEE.toLocaleString("id-ID")}</Text>
           </View>
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Catatan layanan</Text>
+          <Text style={styles.sectionTitle}>Service notes</Text>
           <View style={styles.notesCard}>
             <MaterialIcons name="description" size={20} color="#2D6BFF" />
             <View style={styles.notesContent}>
-              <Text style={styles.notesLabel}>Tambahkan catatan khusus</Text>
-              <Text style={styles.notesDesc}>Opsional, untuk instruksi tambahan ke teknisi.</Text>
+              <Text style={styles.notesLabel}>Add special notes</Text>
+              <Text style={styles.notesDesc}>Optional, for additional instructions to the technician.</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Lokasi layanan</Text>
+          <Text style={styles.sectionTitle}>Service location</Text>
           <View style={styles.locationCard}>
             <Ionicons name="location-sharp" size={22} color="#2D6BFF" />
             <View style={styles.locationContent}>
@@ -241,18 +241,18 @@ export default function Scheduled() {
           <View style={styles.locationMethods}>
             <TouchableOpacity style={styles.methodButton}>
               <MaterialIcons name="contact-mail" size={18} color="#2D6BFF" />
-              <Text style={styles.methodText}>Hubungi</Text>
+              <Text style={styles.methodText}>Contact</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.methodButton}>
               <MaterialCommunityIcons name="map-marker" size={18} color="#2D6BFF" />
-              <Text style={styles.methodText}>Lihat Lokasi</Text>
+              <Text style={styles.methodText}>View location</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.totalSection}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Harga</Text>
+            <Text style={styles.totalLabel}>Total price</Text>
             <Text style={styles.totalPrice}>Rp{total.toLocaleString("id-ID")}</Text>
           </View>
         </View>
@@ -260,7 +260,7 @@ export default function Scheduled() {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.confirmButton}>
-          <Text style={styles.confirmButtonText}>Pesan Sekarang</Text>
+          <Text style={styles.confirmButtonText}>Order Now</Text>
         </TouchableOpacity>
       </View>
 

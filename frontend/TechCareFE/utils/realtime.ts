@@ -17,6 +17,10 @@ export async function getEcho() {
         return null;
     }
 
+    if (!PUSHER_APP_KEY) {
+        return null;
+    }
+
     echoInstance = new Echo({
         broadcaster: "pusher",
         Pusher: PusherClient,

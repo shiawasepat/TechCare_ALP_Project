@@ -6,6 +6,7 @@ import { Feather, FontAwesome6 } from "@expo/vector-icons";
 import { colors as defaultColor } from "@/styles/colors";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { LinearGradient } from "expo-linear-gradient";
+import { API_BASE_URL } from "@/constants/api";
 const LGradient: any = LinearGradient;
 import { getCurrentUserLocation } from "@/utils/location";
 
@@ -55,8 +56,6 @@ const promoSlides: PromoSlide[] = [
   },
 ];
 
-const API_SERVER_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
-
 export function dashboard() {
   const [serviceCenters, setServiceCenters] = useState<ServiceCenter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,9 +91,7 @@ export function dashboard() {
     const getServiceCenterData = async () => {
       try {
         setIsLoading(true);
-        console.log("Fetching from ngrok...");
-
-        const response = await fetch(`${API_SERVER_URL}/service_centers`, {
+        const response = await fetch(`${API_BASE_URL}/service_centers`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

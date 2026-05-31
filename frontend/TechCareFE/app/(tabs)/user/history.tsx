@@ -1,19 +1,79 @@
 import { Feather } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import BackButtonHeader from "@/components/BackButtonHeader";
-import { historyItems } from "./historyData";
+import { fetchHistoryItems, historyItems as fallbackHistoryItems, HistoryItem, isHistoryRelevantItem } from "./historyData";
+
+const getStatusColor = (status: string) => {
+	const normalizedStatus = status.toLowerCase();
+
+	if (normalizedStatus.includes("cancel")) {
+		return "#DC2626";
+	}
+
+	if (normalizedStatus.includes("complete")) {
+		return "#16A34A";
+	}
+
+	if (normalizedStatus.includes("progress") || normalizedStatus.includes("waiting")) {
+		return "#2D6BFF";
+	}
+
+	return "#6B7280";
+};
 
 export default function HistoryScreen() {
+	const [historyList, setHistoryList] = useState<HistoryItem[]>(fallbackHistoryItems);
+	const [historyNotice, setHistoryNotice] = useState<string | null>(null);
+	const [isRefreshing, setIsRefreshing] = useState(false);
+
+	const loadHistory = useCallback(async () => {
+		setIsRefreshing(true);
+
+		try {
+			const result = await fetchHistoryItems();
+			const relevantHistory = result.items.filter(isHistoryRelevantItem);
+			setHistoryList(relevantHistory.length > 0 ? relevantHistory : result.items);
+			setHistoryNotice(result.isFallback ? result.message ?? null : null);
+		} finally {
+			setIsRefreshing(false);
+		}
+	}, []);
+
+	useFocusEffect(
+		useCallback(() => {
+			void loadHistory();
+		}, [loadHistory]),
+	);
+
 	return (
 		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
 			<StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
 			<BackButtonHeader title="History" />
 
-			<ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-				{historyItems.map((item) => (
+			<ScrollView
+				contentContainerStyle={styles.content}
+				showsVerticalScrollIndicator={false}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadHistory} tintColor="#2D6BFF" />}
+			>
+				{historyNotice ? (
+					<View style={styles.noticeCard}>
+						<Text style={styles.noticeText}>{historyNotice}</Text>
+					</View>
+				) : null}
+
+				{isRefreshing ? (
+					<View style={styles.loadingRow}>
+						<ActivityIndicator color="#2D6BFF" />
+						<Text style={styles.loadingText}>Memuat history terbaru...</Text>
+					</View>
+				) : null}
+
+				{historyList.map((item) => (
 					<Pressable
 						key={item.id}
 						style={styles.card}
@@ -25,6 +85,7 @@ export default function HistoryScreen() {
 						<View style={styles.textWrap}>
 							<Text style={styles.itemTitle}>{item.title}</Text>
 							<Text style={styles.itemSubtitle}>{item.serviceType}</Text>
+							<Text style={[styles.itemStatus, { color: getStatusColor(item.status) }]}>{item.status}</Text>
 						</View>
 						<View style={styles.metaWrap}>
 							<Text style={styles.priceText}>{item.price}</Text>
@@ -71,6 +132,27 @@ const styles = StyleSheet.create({
 		paddingTop: 14,
 		gap: 12,
 	},
+	noticeCard: {
+		backgroundColor: "#EEF4FF",
+		borderRadius: 16,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+	},
+	noticeText: {
+		fontSize: 12.5,
+		color: "#1D4ED8",
+		fontWeight: "600",
+	},
+	loadingRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+	},
+	loadingText: {
+		fontSize: 12.5,
+		color: "#4B5563",
+		fontWeight: "600",
+	},
 	card: {
 		backgroundColor: "#FFFFFF",
 		borderRadius: 20,
@@ -108,6 +190,12 @@ const styles = StyleSheet.create({
 	itemSubtitle: {
 		fontSize: 13.5,
 		color: "#4B5563",
+		marginTop: 2,
+	},
+	itemStatus: {
+		fontSize: 12,
+		fontWeight: "700",
+		marginTop: 4,
 	},
 	priceText: {
 		fontSize: 13,
