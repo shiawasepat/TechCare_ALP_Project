@@ -38,6 +38,7 @@ Route::post('/technician/login', [AuthController::class, 'loginTechnician']);
 // butuh token (protected routes)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
+    Route::get('/user/orders', [OrderController::class, 'getUserOrders']); //user history
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // for users

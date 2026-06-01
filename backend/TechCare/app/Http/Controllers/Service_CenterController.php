@@ -9,6 +9,15 @@ use Carbon\Carbon;
 
 class Service_CenterController extends Controller
 {
+    private function publicStorageUrl(Request $request, ?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        return rtrim($request->getSchemeAndHttpHost(), '/') . '/storage/' . ltrim($path, '/');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -86,7 +95,7 @@ public function index()
                 'lokasi_service_center' => $service_center->lokasi_service_center,
                 'open_time' => $service_center->open_time,
                 'close_time' => $service_center->close_time,
-                'foto_service_center' => $service_center->foto_service_center ? url('storage/' . $service_center->foto_service_center) : null,
+                'foto_service_center' => $this->publicStorageUrl($request, $service_center->foto_service_center),
             ]
         ]);
     }
@@ -223,7 +232,7 @@ public function update(Request $request, Service_Center $service_center)
                 'lokasi_service_center' => $service_center->lokasi_service_center,
                 'open_time' => $service_center->open_time,
                 'close_time' => $service_center->close_time,
-                'foto_service_center' => $service_center->foto_service_center ? url('storage/' . $service_center->foto_service_center) : null,
+                'foto_service_center' => $this->publicStorageUrl($request, $service_center->foto_service_center),
             ]
         ]);
     }
