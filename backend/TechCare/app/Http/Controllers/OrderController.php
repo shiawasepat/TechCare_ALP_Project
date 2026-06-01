@@ -46,6 +46,27 @@ public function store(Request $request)
     ], 201);
 }
 
+    public function getUserOrders(Request $request)
+    {
+        $user = $request->user();
+
+        $orders = Order::with([
+            'user:id_user,name',
+            'service:id_service,id_service_center,nama_service,harga_service',
+            'service.serviceCenter:id_service_center,lokasi_service_center,jarak_service_center,name_service_center',
+            'payment:id_payment,id_order,jumlah_pembayaran,metode_pembayaran',
+            'technician:id_technician,name',
+        ])
+            ->where('id_user', $user->id_user)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'message' => 'User orders fetched successfully',
+            'orders' => $orders,
+        ], 200);
+    }
+
     /**
      * Display the specified resource.
      */
