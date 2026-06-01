@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('contact');
             $table->string('email')->unique();
             $table->string('password');
+            $table->string('foto_user')->nullable(); 
             $table->timestamps();
         });
     }

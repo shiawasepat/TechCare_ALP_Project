@@ -51,7 +51,7 @@ public function store(Request $request)
         $user = $request->user();
 
         $orders = Order::with([
-            'user:id_user,name',
+            'user:id_user,name,foto_user',
             'service:id_service,id_service_center,nama_service,harga_service',
             'service.serviceCenter:id_service_center,lokasi_service_center,jarak_service_center,name_service_center',
             'payment:id_payment,id_order,jumlah_pembayaran,metode_pembayaran',
@@ -89,7 +89,7 @@ public function store(Request $request)
 
         // 3. Find only the orders that belong to THIS Mitra's Service Center
         $query = Order::with([
-            'user:id_user,name',
+            'user:id_user,name,foto_user',
             'service:id_service,id_service_center,nama_service,harga_service',
             'service.serviceCenter:id_service_center,lokasi_service_center,jarak_service_center,name_service_center',
         ])
@@ -190,7 +190,7 @@ public function getTodayEarnings(Request $request)
         $requestedTab = $request->query('status'); 
 
         // 1. Base query: only orders belonging to their specific workshop
-        $query = Order::with(['user:id_user,name', 'service:id_service,nama_service'])
+        $query = Order::with(['user:id_user,name,foto_user', 'service:id_service,nama_service'])
             ->whereHas('service', function ($q) use ($technician) {
                 $q->where('id_service_center', $technician->id_service_center);
             });
