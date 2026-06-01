@@ -30,11 +30,6 @@ class Order extends Model
         return $this->belongsTo(Service::class, 'id_service', 'id_service');
     }
 
-    public function technician(): BelongsTo
-    {
-        return $this->belongsTo(Technician::class, 'id_technician', 'id_technician');
-    }
-
 
     public function payment()
     {
