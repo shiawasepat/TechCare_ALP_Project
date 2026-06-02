@@ -50,12 +50,6 @@ export function details() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const tabs = ["service", "reviews", "about"];
 
-  const serviceCenterImages: Record<string, ImageSourcePropType> = {
-    "TechCare Hub Jakarta": require("../../../assets/images/sv_ct/placeholder.jpg"),
-    "FixIt Gadget Studio": require("../../../assets/images/sv_ct/placeholder.jpg"),
-    "Doctor Gadget Surabaya": require("../../../assets/images/sv_ct/placeholder.jpg"),
-  };
-
   const getServiceCenterImage = (imagePath?: string | null, fallbackName?: string): ImageSourcePropType => {
     if (typeof imagePath === "string" && imagePath.length > 0) {
       if (/^https?:\/\//i.test(imagePath)) {
@@ -65,23 +59,7 @@ export function details() {
       return { uri: `${API_ORIGIN}/storage/${imagePath.replace(/^\/+/, "")}` };
     }
 
-    if (fallbackName && serviceCenterImages[fallbackName]) {
-      return serviceCenterImages[fallbackName];
-    }
-
     return require("../../../assets/images/sv_ct/placeholder.jpg");
-  };
-
-  const transformDetailsData = (data: any) => {
-    return {
-      name: data.name_service_center,
-      address: data.address_service_center,
-      rating: data.ratings_ang_vilai_rating || 0,
-      ratingCount: data.ratings_count || 0,
-      closesAt: data.closes_at,
-      distance: `${data.distance} km`,
-      image: getServiceCenterImage(data.foto_service_center, data.name_service_center),
-    };
   };
 
   const transformServiceData = (service: any): ServiceListItem => ({
