@@ -6,7 +6,7 @@ import { Feather, FontAwesome6 } from "@expo/vector-icons";
 import { colors as defaultColor } from "@/styles/colors";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { LinearGradient } from "expo-linear-gradient";
-import { API_BASE_URL } from "@/constants/api";
+import { API_BASE_URL, API_ORIGIN } from "@/constants/api";
 const LGradient: any = LinearGradient;
 import { getCurrentUserLocation } from "@/utils/location";
 
@@ -75,17 +75,25 @@ export function dashboard() {
       address: data.lokasi_service_center,
       latitude: data.latitude || 0,
       longitude: data.longitude || 0,
-      image: getServiceCenterImage(data.name_service_center),
+      image: getServiceCenterImage(data.foto_service_center, data.name_service_center),
     };
   };
 
-  const serviceCenterImages: Record<string, ImageSourcePropType> = {
-    "TechCare Hub Jakarta": require("../../../assets/images/sv_ct/placeholder.jpg"),
-    "FixIt Gadget Studio": require("../../../assets/images/sv_ct/placeholder.jpg"),
-    "Doctor Gadget Surabaya": require("../../../assets/images/sv_ct/placeholder.jpg"),
-  };
-  const getServiceCenterImage = (name: string): ImageSourcePropType => {
-    return serviceCenterImages[name] || require("../../../assets/images/sv_ct/placeholder.jpg");
+  const serviceCenterImages: Record<string, ImageSourcePropType> = {};
+  const getServiceCenterImage = (imagePath?: string | null, fallbackName?: string): ImageSourcePropType => {
+    if (typeof imagePath === "string" && imagePath.length > 0) {
+      if (/^https?:\/\//i.test(imagePath)) {
+        return { uri: imagePath };
+      }
+
+      return { uri: `${API_ORIGIN}/storage/${imagePath.replace(/^\/+/, "")}` };
+    }
+
+    if (fallbackName && serviceCenterImages[fallbackName]) {
+      return serviceCenterImages[fallbackName];
+    }
+
+    return require("../../../assets/images/sv_ct/placeholder.jpg");
   };
   useEffect(() => {
     const getServiceCenterData = async () => {
