@@ -10,7 +10,7 @@ import { StarIcon } from "@/components/svg/Star";
 import { ServiceIcon } from "@/components/svg/Service";
 import { ClockIcon } from "@/components/svg/Clock";
 import { CheckIcon } from "@/components/svg/Check";
-import { API_BASE_URL } from "@/constants/api";
+import { API_BASE_URL, API_ORIGIN } from "@/constants/api";
 
 type ServiceCenterDetails = {
   id_service_center: number;
@@ -47,7 +47,32 @@ export function details() {
   const [activeTab, setActiveTab] = useState("service");
   const [selectedService, setSelectedService] = useState("Please choose a service");
   const [selectedServiceDetails, setSelectedServiceDetails] = useState<ServiceListItem | null>(null);
+  const [tabsWidth, setTabsWidth] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const tabs = ["service", "reviews", "about"];
+
+  const serviceCenterImages: Record<string, ImageSourcePropType> = {
+    "TechCare Hub Jakarta": require("../../../assets/images/sv_ct/placeholder.jpg"),
+    "FixIt Gadget Studio": require("../../../assets/images/sv_ct/placeholder.jpg"),
+    "Doctor Gadget Surabaya": require("../../../assets/images/sv_ct/placeholder.jpg"),
+  };
+
+  const getServiceCenterImage = (imagePath?: string | null, fallbackName?: string): ImageSourcePropType => {
+    if (typeof imagePath === "string" && imagePath.length > 0) {
+      if (/^https?:\/\//i.test(imagePath)) {
+        return { uri: imagePath };
+      }
+
+      return { uri: `${API_ORIGIN}/storage/${imagePath.replace(/^\/+/, "")}` };
+    }
+
+    if (fallbackName && serviceCenterImages[fallbackName]) {
+      return serviceCenterImages[fallbackName];
+    }
+
+    return require("../../../assets/images/sv_ct/placeholder.jpg");
+  };
+
   const transformDetailsData = (data: any) => {
     return {
       name: data.name_service_center,
@@ -56,7 +81,7 @@ export function details() {
       ratingCount: data.ratings_count || 0,
       closesAt: data.closes_at,
       distance: `${data.distance} km`,
-      image: getServiceCenterImage(data.name_service_center), // Assuming you have a function to get the image based on the service center name
+      image: getServiceCenterImage(data.foto_service_center, data.name_service_center),
     };
   };
 
@@ -68,7 +93,16 @@ export function details() {
     raw: service,
   });
 
-  const tabs = ["service", "reviews", "about"];
+  useEffect(() => {
+    const nextIndex = tabs.indexOf(activeTab);
+
+    Animated.timing(slideAnim, {
+      toValue: nextIndex < 0 ? 0 : nextIndex,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [activeTab, slideAnim]);
 
   const serviceNameDisplay = serviceData?.name || serviceName;
   const serviceAddressDisplay = serviceData?.lokasi || serviceData?.address || serviceAddress;
@@ -89,16 +123,6 @@ export function details() {
         service_variant: selectedService === "Home Service" ? "Home Service" : selectedService === "Scheduled Service" ? "Scheduled Service" : "Scheduled Service",
       },
     });
-  };
-
-  const serviceCenterImages: Record<string, ImageSourcePropType> = {
-    "TechCare Hub Jakarta": require("../../../assets/images/sv_ct/placeholder.jpg"),
-    "FixIt Gadget Studio": require("../../../assets/images/sv_ct/placeholder.jpg"),
-    "Doctor Gadget Surabaya": require("../../../assets/images/sv_ct/placeholder.jpg"),
-  };
-
-  const getServiceCenterImage = (name: string): ImageSourcePropType => {
-    return serviceCenterImages[name] || require("../../../assets/images/sv_ct/placeholder.jpg");
   };
 
   const getServiceCenterData = async () => {
@@ -132,7 +156,7 @@ export function details() {
         deskripsi: data.deskripsi || data.description || "",
         lokasi: data.lokasi || data.location || data.address || "",
         status: data.status || "",
-        foto: data.foto || data.photo || data.image || null,
+        foto: data.foto_service_center || data.foto || data.photo || data.image || null,
         rating: data.ratings_ang_vilai_rating || data.rating || data.ratings || 0,
         ratingCount: data.ratings_count || (data.ratings ? data.ratings.length : 0),
         closesAt: data.closes_at || data.closing_time || null,
@@ -169,7 +193,7 @@ export function details() {
 
       <ScrollView style={styles.container}>
         {/* Image */}
-        <Image source={getServiceCenterImage(serviceNameDisplay)} style={styles.detailsImage} />
+        <Image source={getServiceCenterImage(serviceData?.foto, serviceNameDisplay)} style={styles.detailsImage} />
 
         {/* Title with Save/Share */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 15 }}>
@@ -207,7 +231,7 @@ export function details() {
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabsContainer}>
+        <View style={styles.tabsContainer} onLayout={(event) => setTabsWidth(event.nativeEvent.layout.width)}>
           {tabs.map((tab) => (
             <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={[styles.tab]}>
               <Text style={activeTab === tab ? styles.activeTabText : styles.tabText}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
@@ -217,11 +241,12 @@ export function details() {
             style={[
               styles.tabIndicator,
               {
+                width: tabsWidth > 0 ? tabsWidth / tabs.length : `${100 / tabs.length}%`,
                 transform: [
                   {
                     translateX: slideAnim.interpolate({
                       inputRange: [0, 1, 2],
-                      outputRange: ["0%", "100%", "200%"],
+                      outputRange: [0, tabsWidth > 0 ? tabsWidth / tabs.length : 0, tabsWidth > 0 ? (tabsWidth / tabs.length) * 2 : 0],
                     }),
                   },
                 ],
