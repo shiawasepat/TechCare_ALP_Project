@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Image, ImageSourcePropType, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View, PanResponder } from "react-native";
+import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, TextInput, View, PanResponder, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Feather, FontAwesome6 } from "@expo/vector-icons";
@@ -10,7 +10,7 @@ import { API_BASE_URL, API_ORIGIN } from "@/constants/api";
 const LGradient: any = LinearGradient;
 import { getCurrentUserLocation } from "@/utils/location";
 
-type FilterKey = "Nearest" | "Top Rated" | "Open Now" | "Filter";
+type FilterKey = "Nearest" | "Top Rated" | "Open Now";
 
 type ServiceCenter = {
   id_service_center: number;
@@ -63,6 +63,14 @@ export function dashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("Nearest");
   const [activePromoIndex, setActivePromoIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // Debounce the search query to avoid filtering on every keystroke
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
   const transformServiceCenterData = (data: any): ServiceCenter => {
     return {
       id_service_center: data.id_service_center,
@@ -242,39 +250,56 @@ export function dashboard() {
   }, [serviceCenters, userLocation]);
 
   const visibleServiceCenters = useMemo(() => {
+    // Start from full list
+    let list = centersWithDistance;
+
+    // Apply filter selection
     if (activeFilter === "Top Rated") {
-      return [...centersWithDistance].sort((left, right) => {
-        if (right.rating !== left.rating) {
-          return right.rating - left.rating;
-        }
+      list = [...list].sort((left, right) => {
+        if (right.rating !== left.rating) return right.rating - left.rating;
         return right.reviews - left.reviews;
       });
-    }
-
-    if (activeFilter === "Open Now") {
-      return centersWithDistance.filter((center) => isOpenNow(center));
-    }
-
-    if (activeFilter === "Nearest") {
-      return [...centersWithDistance].sort((left, right) => {
-        if (left.computedDistanceKm !== right.computedDistanceKm) {
-          return left.computedDistanceKm - right.computedDistanceKm;
-        }
+    } else if (activeFilter === "Open Now") {
+      list = list.filter((center) => isOpenNow(center));
+    } else if (activeFilter === "Nearest") {
+      list = [...list].sort((left, right) => {
+        if (left.computedDistanceKm !== right.computedDistanceKm) return left.computedDistanceKm - right.computedDistanceKm;
         return left.name.localeCompare(right.name);
       });
     }
 
-    return centersWithDistance;
-  }, [activeFilter, centersWithDistance]);
+    // Apply debounced search query
+    const q = debouncedQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((c) => (c.name || "").toLowerCase().includes(q) || (c.address || "").toLowerCase().includes(q));
+    }
+
+    return list;
+  }, [activeFilter, centersWithDistance, debouncedQuery]);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "bottom", "left", "right"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F6F9FF" />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <View style={styles.searchContainer}>
             <Feather name="search" size={26} color={defaultColor.primary.backgroundColor} />
-            <TextInput placeholder="Search service or store..." placeholderTextColor="#97A2B8" style={styles.searchInput} />
+            <TextInput
+              placeholder="Search service or store..."
+              placeholderTextColor="#97A2B8"
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              onSubmitEditing={() => {
+                setDebouncedQuery(searchQuery);
+                Keyboard.dismiss();
+              }}
+            />
+            {searchQuery.length > 0 ? (
+              <Pressable onPress={() => setSearchQuery("")} style={styles.searchClearButton} accessibilityLabel="Clear search">
+                <Feather name="x" size={20} color="#9CA3AF" />
+              </Pressable>
+            ) : null}
           </View>
 
           <Pressable style={styles.profileButton} accessibilityRole="button" onPress={() => router.push("/user/profile")}>
@@ -436,6 +461,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#111827",
     fontWeight: "500",
+  },
+  searchClearButton: {
+    marginLeft: 8,
+    padding: 6,
+    borderRadius: 16,
   },
   profileButton: {
     width: 54,
