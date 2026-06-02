@@ -1,9 +1,10 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Keyboard, KeyboardAvoidingView, Linking, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BackButtonHeader from "@/components/BackButtonHeader";
 import { API_BASE_URL } from "@/constants/api";
 
@@ -52,12 +53,14 @@ export default function Scheduled() {
   }>();
 
   const serviceCenterId = typeof params.service_center === "string" ? params.service_center : "";
+  const selectedServiceId = typeof params.selected_service_id === "string" ? params.selected_service_id : "";
   const initialServiceCenterName = typeof params.service_center_name === "string" ? params.service_center_name : "Service Center Location";
   const initialServiceCenterAddress = "Jl. Tech Service No. 123, Jakarta";
   const initialServiceName = typeof params.selected_service_name === "string" && params.selected_service_name.length > 0 ? params.selected_service_name : typeof params.name === "string" ? params.name : "Laptop Service";
   const initialServicePrice = parseMoney(params.selected_service_price);
   const initialServiceDescription = typeof params.selected_service_description === "string" ? params.selected_service_description : "";
   const initialVariant = normalizeVariant(typeof params.service_variant === "string" ? params.service_variant : undefined);
+  const insets = useSafeAreaInsets();
 
   const [isLoading, setIsLoading] = useState(true);
   const [serviceCenterName, setServiceCenterName] = useState(initialServiceCenterName);
@@ -68,8 +71,14 @@ export default function Scheduled() {
   const [selectedServiceDescription, setSelectedServiceDescription] = useState(initialServiceDescription || "Review details before continuing");
   const [serviceVariant, setServiceVariant] = useState<ServiceVariant>(initialVariant);
   const [quantity, setQuantity] = useState(1);
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+  const [quantityInput, setQuantityInput] = useState(String(quantity));
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [isCustomizeModalVisible, setIsCustomizeModalVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerLocation, setCustomerLocation] = useState("");
+  const [isEditingCustomerLocation, setIsEditingCustomerLocation] = useState(false);
+  const [customerInput, setCustomerInput] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -147,6 +156,10 @@ export default function Scheduled() {
     };
   }, [initialServiceDescription, initialServiceName, initialServicePrice, initialVariant, params.selected_service_id, serviceCenterId, initialServiceCenterAddress, initialServiceCenterName]);
 
+  useEffect(() => {
+    setQuantityInput(String(quantity));
+  }, [quantity]);
+
   const isHomeService = serviceVariant === "Home Service";
   const subtotal = selectedServicePrice * quantity;
   const total = subtotal + PLATFORM_FEE + (isHomeService ? SHIPPING_COST : 0);
@@ -156,8 +169,82 @@ export default function Scheduled() {
     setIsCustomizeModalVisible(false);
   };
 
+  const handleOrderNow = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    const resolvedServiceId = selectedServiceId || serviceOptions.find((service) => service.name === selectedServiceName)?.id || "";
+
+    if (!resolvedServiceId) {
+      Alert.alert("Order unavailable", "Missing service selection for this order.");
+      return;
+    }
+
+    const token = (await AsyncStorage.getItem("authToken"))?.trim();
+    if (!token) {
+      Alert.alert("Session expired", "Please login again to continue.");
+      return;
+    }
+
+    const numericServiceId = Number(resolvedServiceId);
+    if (!Number.isFinite(numericServiceId)) {
+      Alert.alert("Order unavailable", "Invalid service selection for this order.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id_service: numericServiceId,
+          tipe_order: isHomeService ? "home_service" : "reservasi",
+          // prefer customer's location when provided; otherwise use service center address
+          alamat_home_service: isHomeService ? customerLocation || serviceCenterAddress : undefined,
+          lokasi_stops: isHomeService ? (customerLocation ? [serviceCenterAddress, customerLocation] : [serviceCenterAddress]) : undefined,
+          waktu_reservasi: isHomeService ? undefined : new Date().toISOString(),
+        }),
+      });
+
+      const body = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(body?.message || `HTTP ${response.status}`);
+      }
+
+      const createdOrderId = body?.order?.id_order;
+      if (!createdOrderId) {
+        throw new Error("The backend did not return an order id.");
+      }
+
+      router.push({
+        pathname: "/user/payment",
+        params: { orderId: String(createdOrderId) },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      Alert.alert("Order failed", message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const saveCustomerLocation = () => {
+    const value = customerInput.trim();
+    if (!value) return;
+    setCustomerLocation(value);
+    setIsEditingCustomerLocation(false);
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
       <BackButtonHeader title="Confirm Order" subtitle={serviceCenterName} onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -181,11 +268,44 @@ export default function Scheduled() {
               <Text style={styles.serviceItemDesc}>{selectedServiceDescription || "Review details before continuing"}</Text>
               <Text style={styles.serviceMeta}>Qty {quantity} · Est. 2-3 hours</Text>
             </View>
-            <View style={styles.priceContainer}>
-              <Text style={styles.servicePrice}>Rp{selectedServicePrice.toLocaleString("id-ID")}</Text>
-              <TouchableOpacity style={styles.editChip} onPress={() => setIsCustomizeModalVisible(true)}>
-                <Text style={styles.editChipText}>Edit</Text>
-              </TouchableOpacity>
+            <View>
+              <View style={styles.priceContainer}>
+                <Text style={styles.servicePrice}>Rp{selectedServicePrice.toLocaleString("id-ID")}</Text>
+              </View>
+              <View style={styles.quantityRow}>
+                <Pressable style={styles.quantityButton} onPress={() => setQuantity((current) => Math.max(1, current - 1))}>
+                  <Feather name="minus" size={18} color="#2D6BFF" />
+                </Pressable>
+
+                {isEditingQuantity ? (
+                  <TextInput
+                    style={[styles.quantityValue, styles.quantityInput]}
+                    value={quantityInput}
+                    onChangeText={(t) => setQuantityInput(t.replace(/[^0-9]/g, ""))}
+                    keyboardType="number-pad"
+                    autoFocus
+                    onBlur={() => {
+                      const parsed = Math.max(1, Number.parseInt(quantityInput || "1", 10) || 1);
+                      setQuantity(parsed);
+                      setIsEditingQuantity(false);
+                    }}
+                    onSubmitEditing={() => {
+                      const parsed = Math.max(1, Number.parseInt(quantityInput || "1", 10) || 1);
+                      setQuantity(parsed);
+                      setIsEditingQuantity(false);
+                      Keyboard.dismiss();
+                    }}
+                  />
+                ) : (
+                  <Pressable onPress={() => setIsEditingQuantity(true)}>
+                    <Text style={styles.quantityValue}>{quantity}</Text>
+                  </Pressable>
+                )}
+
+                <Pressable style={styles.quantityButton} onPress={() => setQuantity((current) => current + 1)}>
+                  <Feather name="plus" size={18} color="#2D6BFF" />
+                </Pressable>
+              </View>
             </View>
           </View>
 
@@ -230,24 +350,69 @@ export default function Scheduled() {
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Service location</Text>
-          <View style={styles.locationCard}>
-            <Ionicons name="location-sharp" size={22} color="#2D6BFF" />
-            <View style={styles.locationContent}>
-              <Text style={styles.locationName}>{serviceCenterName}</Text>
-              <Text style={styles.locationMeta}>{serviceCenterAddress}</Text>
+
+          {isHomeService ? (
+            <View style={{ gap: 10 }}>
+              <View style={[styles.locationCard, { paddingVertical: 12 }]}>
+                <Ionicons name="location-sharp" size={22} color="#2D6BFF" />
+                <View style={styles.locationContent}>
+                  <Text style={styles.locationName}>{serviceCenterName}</Text>
+                  <Text style={styles.locationMeta}>{serviceCenterAddress}</Text>
+                </View>
+              </View>
+              <View style={[styles.locationCard, { paddingVertical: 12 }]}>
+                <MaterialIcons name="person-pin" size={22} color="#2D6BFF" />
+                <View style={styles.locationContent}>
+                  <Text style={styles.locationName}>Your location</Text>
+                  <Text style={styles.locationMeta}>{customerLocation || "Tap edit to set your address"}</Text>
+                </View>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <TouchableOpacity
+                    style={styles.editChip}
+                    onPress={() => {
+                      setCustomerInput(customerLocation);
+                      setIsEditingCustomerLocation(true);
+                    }}
+                  >
+                    <Text style={styles.editChipText}>{customerLocation ? "Edit" : "Add"}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.methodButton}
+                    onPress={() => {
+                      const origin = encodeURIComponent(serviceCenterAddress || "");
+                      const destination = encodeURIComponent(customerLocation || "");
+                      const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+                      Linking.openURL(url).catch(() => Alert.alert("Unable to open maps", "Please install a maps application or set a valid destination."));
+                    }}
+                  >
+                    <MaterialIcons name="directions" size={18} color="#2D6BFF" />
+                    <Text style={[styles.methodText, { marginLeft: 8 }]}>Directions</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-            <MaterialIcons name="chevron-right" size={22} color="#9CA3AF" />
-          </View>
-          <View style={styles.locationMethods}>
-            <TouchableOpacity style={styles.methodButton}>
-              <MaterialIcons name="contact-mail" size={18} color="#2D6BFF" />
-              <Text style={styles.methodText}>Contact</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.methodButton}>
-              <MaterialCommunityIcons name="map-marker" size={18} color="#2D6BFF" />
-              <Text style={styles.methodText}>View location</Text>
-            </TouchableOpacity>
-          </View>
+          ) : (
+            <>
+              <View style={styles.locationCard}>
+                <Ionicons name="location-sharp" size={22} color="#2D6BFF" />
+                <View style={styles.locationContent}>
+                  <Text style={styles.locationName}>{serviceCenterName}</Text>
+                  <Text style={styles.locationMeta}>{serviceCenterAddress}</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color="#9CA3AF" />
+              </View>
+              <View style={styles.locationMethods}>
+                <TouchableOpacity style={styles.methodButton}>
+                  <MaterialIcons name="contact-mail" size={18} color="#2D6BFF" />
+                  <Text style={styles.methodText}>Contact</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.methodButton}>
+                  <MaterialCommunityIcons name="map-marker" size={18} color="#2D6BFF" />
+                  <Text style={styles.methodText}>View location</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.totalSection}>
@@ -259,8 +424,8 @@ export default function Scheduled() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.confirmButton}>
-          <Text style={styles.confirmButtonText}>Order Now</Text>
+        <TouchableOpacity style={[styles.confirmButton, isSubmitting && styles.confirmButtonDisabled]} onPress={handleOrderNow} disabled={isSubmitting}>
+          {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.confirmButtonText}>Order Now</Text>}
         </TouchableOpacity>
       </View>
 
@@ -269,27 +434,6 @@ export default function Scheduled() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Customize order</Text>
             <Text style={styles.modalSubtitle}>Adjust the service type, quantity, or notes before checkout.</Text>
-
-            <Text style={styles.modalLabel}>Service type</Text>
-            <View style={styles.modalVariantRow}>
-              <Pressable onPress={() => setServiceVariant("Home Service")} style={[styles.modalVariantChip, isHomeService && styles.modalVariantChipActive]}>
-                <Text style={[styles.modalVariantText, isHomeService && styles.modalVariantTextActive]}>Home Service</Text>
-              </Pressable>
-              <Pressable onPress={() => setServiceVariant("Scheduled Service")} style={[styles.modalVariantChip, !isHomeService && styles.modalVariantChipActive]}>
-                <Text style={[styles.modalVariantText, !isHomeService && styles.modalVariantTextActive]}>Scheduled Service</Text>
-              </Pressable>
-            </View>
-
-            <Text style={styles.modalLabel}>Quantity</Text>
-            <View style={styles.quantityRow}>
-              <Pressable style={styles.quantityButton} onPress={() => setQuantity((current) => Math.max(1, current - 1))}>
-                <Feather name="minus" size={18} color="#2D6BFF" />
-              </Pressable>
-              <Text style={styles.quantityValue}>{quantity}</Text>
-              <Pressable style={styles.quantityButton} onPress={() => setQuantity((current) => current + 1)}>
-                <Feather name="plus" size={18} color="#2D6BFF" />
-              </Pressable>
-            </View>
 
             <Text style={styles.modalLabel}>Special instructions</Text>
             <TextInput value={specialInstructions} onChangeText={setSpecialInstructions} placeholder="Add anything the technician should know" placeholderTextColor="#9CA3AF" multiline style={styles.textArea} />
@@ -304,6 +448,28 @@ export default function Scheduled() {
             </View>
           </View>
         </View>
+      </Modal>
+
+      <Modal visible={isEditingCustomerLocation} transparent animationType="fade" onRequestClose={() => setIsEditingCustomerLocation(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={insets.top}>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Your location</Text>
+              <Text style={styles.modalSubtitle}>Enter your address or instructions for the technician.</Text>
+
+              <TextInput value={customerInput} onChangeText={setCustomerInput} placeholder="e.g. Jl. Sudirman No. 12, Jakarta" placeholderTextColor="#9CA3AF" multiline style={styles.textArea} />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalSecondaryButton} onPress={() => setIsEditingCustomerLocation(false)}>
+                  <Text style={styles.modalSecondaryText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalPrimaryButton} onPress={saveCustomerLocation}>
+                  <Text style={styles.modalPrimaryText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {isLoading ? (
@@ -546,11 +712,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   methodButton: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     backgroundColor: "#EEF4FF",
     borderRadius: 14,
     gap: 6,
@@ -605,6 +771,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "800",
+  },
+  confirmButtonDisabled: {
+    opacity: 0.8,
   },
   modalBackdrop: {
     flex: 1,
@@ -672,8 +841,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quantityButton: {
-    width: 40,
-    height: 40,
+    width: 25,
+    height: 25,
     borderRadius: 20,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
@@ -687,6 +856,12 @@ const styles = StyleSheet.create({
     color: "#111827",
     minWidth: 24,
     textAlign: "center",
+  },
+  quantityInput: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    backgroundColor: "transparent",
+    width: 60,
   },
   textArea: {
     minHeight: 100,
