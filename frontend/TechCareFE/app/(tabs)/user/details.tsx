@@ -1,11 +1,11 @@
 import { Alert, Animated, Image, ImageSourcePropType, Text, View, StyleSheet, TouchableOpacity, ScrollView, Pressable, Easing, ActivityIndicator } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors as defaultColor } from "@/styles/colors";
-import { BackBtn } from "@/components/btn/back-btn";
 import { SaveBtn } from "@/components/btn/save-btn";
 import { ShareBtn } from "@/components/btn/share-btn";
+import BackButtonHeader from "@/components/BackButtonHeader";
 import { StarIcon } from "@/components/svg/Star";
 import { ServiceIcon } from "@/components/svg/Service";
 import { ClockIcon } from "@/components/svg/Clock";
@@ -36,7 +36,6 @@ export function details() {
   const [serviceData, setServiceData] = useState<any | null>(null);
   const [servicesList, setServicesList] = useState<any[]>([]);
   const [ratingsList, setRatingsList] = useState<any[]>([]);
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ name?: string; address?: string; rating?: string; closesAt?: string; distance?: string; service_center?: string; id?: string }>();
   const serviceId = Array.isArray(params.service_center) ? params.service_center[0] : params.service_center || (Array.isArray(params.id) ? params.id[0] : params.id) || "";
   const serviceName = typeof params.name === "string" && params.name.length > 0 ? params.name : "";
@@ -185,11 +184,8 @@ export function details() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.mainContainer} edges={["top", "left", "right"]}>
-      <View style={styles.topBar}>
-        <BackBtn />
-        <Text style={styles.detailsText}>Details</Text>
-      </View>
+    <SafeAreaView style={styles.mainContainer} edges={["left", "right"]}>
+      <BackButtonHeader title="Details" subtitle={serviceNameDisplay || "Service center"} onBack={() => router.back()} />
 
       <ScrollView style={styles.container}>
         {/* Image */}
@@ -315,9 +311,11 @@ export function details() {
         )}
       </ScrollView>
       <View style={styles.bottomBar}>
-        <View style={{ flexDirection: "column", marginLeft: 12 }}>
-          <Text>Selected Service</Text>
-          <Text style={{ fontWeight: "bold" }}>{selectedService}</Text>
+        <View style={styles.selectedServiceContainer}>
+          <Text style={styles.selectedServiceLabel}>Selected Service</Text>
+          <Text style={styles.selectedServiceValue} numberOfLines={2} ellipsizeMode="tail">
+            {selectedService}
+          </Text>
         </View>
         <TouchableOpacity style={styles.chatButton} onPress={() => router.push("/user/chat")}>
           <Text style={styles.chatButtonText}>Chat</Text>
@@ -340,18 +338,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: defaultColor.background.backgroundColor,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 30,
-    backgroundColor: "#fff",
-    zIndex: 100,
-  },
-  detailsText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginLeft: 25,
   },
   detailsImage: {
     width: "100%",
@@ -519,10 +505,29 @@ const styles = StyleSheet.create({
   bottomBar: {
     backgroundColor: "#fff",
     flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderTopColor: defaultColor.primary.backgroundColor,
     borderTopWidth: 1,
+  },
+  selectedServiceContainer: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 12,
+    minWidth: 0,
+  },
+  selectedServiceLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginBottom: 2,
+  },
+  selectedServiceValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+    flexShrink: 1,
+    lineHeight: 20,
   },
   chatButton: {
     marginLeft: "auto",
