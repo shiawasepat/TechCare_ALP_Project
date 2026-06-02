@@ -5,8 +5,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert, Tex
 import { colors } from "@/styles/colors";
 import { router } from "expo-router";
 import { API_BASE_URL } from "@/constants/api";
-import { BackBtn } from "@/components/btn/back-btn";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
+import BackButtonHeader from "@/components/BackButtonHeader";
 
 export default function Profile() {
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);
@@ -136,10 +136,7 @@ export default function Profile() {
     <View style={styles.profileContainer}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }} refreshControl={<RefreshControl refreshing={isLoadingProfile} onRefresh={getUserData} />}>
         {/* TopBar */}
-        <View style={styles.topBar}>
-          <BackBtn />
-          <Text style={styles.title}>My Profile</Text>
-        </View>
+        <BackButtonHeader title="Profile" onBack={() => router.back()} />
         <View style={styles.avatarContainer}>
           <View style={styles.avatar} />
           <TouchableOpacity style={styles.cameraBtn}>
