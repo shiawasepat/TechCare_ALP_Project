@@ -32,7 +32,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'contact' => 'required|string|max:20',
-            'foto_user' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'foto_user' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $validated['password'] = bcrypt($validated['password']);

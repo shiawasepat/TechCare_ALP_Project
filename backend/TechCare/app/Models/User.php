@@ -26,12 +26,10 @@ class User extends Authenticatable
         'password',
         'foto_user',
 
-
     ];
 
     protected $primaryKey = 'id_user';
     protected $appends = ['foto_user_url'];
-
     public function messages()
 {
     return $this->hasMany(Message::class, 'id_sender');
