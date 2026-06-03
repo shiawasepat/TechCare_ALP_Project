@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "795632228590",
+    "project_id": "notif-83b07",
+    "storage_bucket": "notif-83b07.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:795632228590:android:78785c8ebaeb7ee257fbff",
+        "android_client_info": {
+          "package_name": "com.anonymous.TechCarePT"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsf3AgG-UT512aiO1bG3V4nkG9NYXHbCw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:795632228590:android:1394e7ee2f78882957fbff",
+        "android_client_info": {
+          "package_name": "com.pushnotificationapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsf3AgG-UT512aiO1bG3V4nkG9NYXHbCw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

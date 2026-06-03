@@ -15,6 +15,7 @@ class UserSeeder extends Seeder
             'email' => 'budi@user.com',
             'password' => Hash::make('password'),
             'contact' => '081234567890',
+            'foto_user' => 'profiles/profile1.jpg',
         ]);
 
         User::create([
@@ -22,6 +23,7 @@ class UserSeeder extends Seeder
             'email' => 'siti@user.com',
             'password' => Hash::make('password'),
             'contact' => '081234567890',
+            'foto_user' => 'profiles/profile1.jpg',
         ]);
 
         User::create([
@@ -29,6 +31,7 @@ class UserSeeder extends Seeder
             'contact' => '085544332211',
             'email' => 'andi@user.com',
             'password' => Hash::make('password'),
+            'foto_user' => 'profiles/profile1.jpg',
         ]);
     }
 }

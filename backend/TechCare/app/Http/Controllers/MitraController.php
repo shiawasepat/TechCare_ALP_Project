@@ -71,6 +71,26 @@ class MitraController extends Controller
         ]);
     }
 
+    public function updateFcmToken(Request $request)
+{
+    $request->validate([
+        'fcm_token' => 'required|string'
+    ]);
+
+    // Ambil data mitra yang lagi login
+    $mitra = $request->user(); 
+    
+    // Update tokennya di database
+    $mitra->update([
+        'fcm_token' => $request->fcm_token
+    ]);
+
+    return response()->json([
+        'message' => 'FCM Token berhasil disimpan!',
+        'fcm_token' => $mitra->fcm_token
+    ], 200);
+}
+
     /**
      * Remove the specified resource from storage.
      */

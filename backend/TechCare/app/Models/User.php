@@ -24,15 +24,23 @@ class User extends Authenticatable
         'contact',
         'email',
         'password',
+        'foto_user',
+
 
     ];
 
     protected $primaryKey = 'id_user';
+    protected $appends = ['foto_user_url'];
 
     public function messages()
 {
     return $this->hasMany(Message::class, 'id_sender');
 }
+
+    public function getFotoUserUrlAttribute()
+    {
+        return $this->foto_user ? asset('storage/' . $this->foto_user) : null;
+    }
 
 }
 

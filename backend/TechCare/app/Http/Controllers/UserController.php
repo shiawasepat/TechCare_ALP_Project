@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -31,9 +32,15 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'contact' => 'required|string|max:20',
+            'foto_user' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $validated['password'] = bcrypt($validated['password']);
+
+        if ($request->hasFile('foto_user')) {
+        $path = $request->file('foto_user')->store('profiles', 'public');
+        $validated['foto_user'] = $path;
+    }
 
         $user = User::create($validated);
 
@@ -60,7 +67,16 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:64|min:3',
+            'foto_user' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        if ($request->hasFile('foto_user')) {
+        if ($user->foto_user) {
+            Storage::disk('public')->delete($user->foto_user);
+        }
+        $path = $request->file('foto_user')->store('profiles', 'public');
+        $validated['foto_user'] = $path;
+    }
 
         $user->update($validated);
         return response()->json([
