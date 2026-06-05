@@ -55,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // for mitras
     Route::post('/services', [ServiceController::class, 'store']);
+    Route::post('/mitra/update-fcm', [MitraController::class, 'updateFcmToken']);
     Route::put('/services/{service}', [ServiceController::class, 'update']); 
     Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
     Route::get('/mitra/orders', [OrderController::class, 'getMitraOrders']); 

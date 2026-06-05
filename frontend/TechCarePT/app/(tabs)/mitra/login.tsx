@@ -5,6 +5,7 @@ import { EyeIcon } from "@/components/svg/EyeIcon";
 import { Ionicons } from "@expo/vector-icons";
 import { colors as defaultColor } from "@/styles/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import messaging from '@react-native-firebase/messaging';
 
 export function MitraLogin() {
   const API_BASE_URL = "https://herbal-ungodly-reformed.ngrok-free.dev/api";
@@ -34,7 +35,33 @@ export function MitraLogin() {
 
       // Store the token
       await AsyncStorage.setItem("authToken", json.token);
+      // FCM thingy magic
+      try {
+        const fcmToken = await messaging().getToken();
+        console.log('🔥 FCM Token Siap Dikirim:', fcmToken);
 
+        const fcmResponse = await fetch(`${API_BASE_URL}/mitra/update-fcm`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${json.token}`, // Numpang token login
+          },
+          body: JSON.stringify({
+            fcm_token: fcmToken,
+          }),
+        });
+
+        if (fcmResponse.ok) {
+          const fcmData = await fcmResponse.json();
+          console.log(' Status DB Backend:', fcmData.message);
+        } else {
+          console.log(' Gagal update FCM di backend, status:', fcmResponse.status);
+        }
+      } catch (fcmError) {
+        console.error("Gagal get/kirim FCM token:", fcmError);
+        // if no FCM let it be. supaya tidak halang real login
+      }
+      // FCM akhir
       // Navigate to home
       router.replace("/mitra/order-view");
     } catch (error) {

@@ -25,6 +25,7 @@ class Mitra extends Authenticatable
     protected $fillable = [
         'email',
         'password',
+        'fcm_token'
 
 
     ];

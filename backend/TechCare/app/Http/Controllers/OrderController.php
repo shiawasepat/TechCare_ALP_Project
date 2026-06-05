@@ -6,6 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use Carbon\Carbon;
 use App\Models\Payment;
+use Kreait\Laravel\Firebase\Facades\Firebase;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
+use Illuminate\Support\Facades\Log;
+
 
 class OrderController extends Controller
 {
@@ -28,18 +33,58 @@ public function store(Request $request)
     $validated = $request->validate([
         'id_service'          => 'required|exists:services,id_service',
         'tipe_order'          => 'required|in:reservasi,home_service',
-        
-        // 'required_if' means: if type is home_service, they MUST provide an address!
         'alamat_home_service' => 'required_if:tipe_order,home_service|string|nullable',
         'waktu_reservasi'     => 'required_if:tipe_order,reservasi|date|nullable',
     ]);
 
+    // $user di sini adalah CUSTOMER yang sedang login dan bikin orderan
     $user = $request->user();
     $validated['id_user'] = $user->id_user;
 
+    // 1. Create order SATU KALI saja
     $order = Order::create($validated);
-    $order->load(['service', 'user']);
+    
+    // Perbaikan: load 'user' (Customer si pembuat order) dan load jalurnya ke 'mitra' (Business Owner)
+    $order->load(['service.serviceCenter.mitra', 'user']);
 
+    // --- NEW: FCM NOTIFICATION LOGIC ---
+    
+    // 2. Find the Mitra (Business Owner) lewat relasi service center
+    $mitra = $order->service->serviceCenter->mitra ?? null; 
+
+    // 3. If the Mitra exists and has an FCM token, send the push!
+    if ($mitra && $mitra->fcm_token) {
+        try {
+            $messaging = \Kreait\Laravel\Firebase\Facades\Firebase::messaging();
+
+            $notification = \Kreait\Firebase\Messaging\Notification::create(
+                '🚨 Pesanan Baru!', 
+                'Ada Orderan ' . str_replace('_', ' ', $order->tipe_order) . ' dari ' . ($order->user->name ?? 'Customer') . '. Cek sekarang!'
+            );
+
+            $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget('token', $mitra->fcm_token)
+                ->withNotification($notification)
+                ->withData([
+                    'id_order' => (string) $order->id_order,
+                    'type'     => 'new_order'
+                ])
+                ->withAndroidConfig([
+                    'priority' => 'high', //  PAKSA PRIORITAS TINGGI
+                    'notification' => [
+                        'channel_id' => 'order_channel', // Pakai Channel ID khusus
+                        'sound' => 'default',
+                        'notification_priority' => 'PRIORITY_HIGH', //  Supaya banner drop-down muncul
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
+                ]);
+            $messaging->send($message);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('FCM Error: ' . $e->getMessage());
+        }
+    }
+
+    // 4. PENTING: Kembalikan response ke aplikasi User (Customer)
     return response()->json([
         'message' => 'Order placed successfully!',
         'order' => $order
